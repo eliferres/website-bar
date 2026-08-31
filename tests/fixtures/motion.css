@@ -1,0 +1,9 @@
+.card {
+  transition: transform 1500ms ease;
+}
+.chip {
+  transition: opacity 80ms linear;
+}
+.panel {
+  transition: color 250ms ease, background-color 900ms ease;
+}

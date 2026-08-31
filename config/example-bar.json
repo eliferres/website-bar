@@ -1,0 +1,46 @@
+{
+  "bar": {
+    "name": "North Star example bar",
+    "note": "Illustrative numbers. Replace them with habits you measured on the site you actually want to be graded against."
+  },
+  "checks": {
+    "headline_economy": {
+      "enabled": true,
+      "max_words": { "h1": 7, "h2": 10 },
+      "banned_openers": ["Welcome to", "Unlock", "Elevate", "Discover", "Empower"],
+      "require_sentence_case": true,
+      "title_case_word_allowance": 1,
+      "proper_nouns": ["North", "Star", "Monday", "Europe"]
+    },
+    "motion_durations": {
+      "enabled": true,
+      "min_ms": 150,
+      "max_ms": 400,
+      "hard_max_ms": 700,
+      "require_reduced_motion": true
+    },
+    "slop_patterns": {
+      "enabled": true,
+      "phrases": [
+        "in today's fast-paced world",
+        "we are thrilled to announce",
+        "delve into",
+        "seamlessly integrate",
+        "game-changing",
+        "revolutionize",
+        "unlock the power of",
+        "take it to the next level",
+        "cutting-edge solution",
+        "at the end of the day"
+      ],
+      "max_emoji_bullets": 0
+    },
+    "craft_basics": {
+      "enabled": true,
+      "max_font_families": 2,
+      "max_colors": 12,
+      "require_alt_text": true,
+      "require_viewport_meta": true
+    }
+  }
+}
