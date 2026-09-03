@@ -1,0 +1,12 @@
+[
+  {
+    "cmd": "python3 website_bar.py demo/failing-page.html --bar config/example-bar.json",
+    "out": "headline economy: FAIL\n  - h1 runs 9 words, ceiling is 7\n  - h2 opens with the banned phrase \"Unlock\"\nmotion durations: FAIL\n  - 1500ms is past the absolute ceiling of 700ms\nslop patterns: FAIL\n  - 5 lines open with an emoji, allowance is 0\nFAIL: 5 failure(s) across 4 check families (0 disabled in this bar)",
+    "status": 1
+  },
+  {
+    "cmd": "python3 website_bar.py demo/passing-page.html --bar config/example-bar.json",
+    "out": "headline economy: PASS\nmotion durations: PASS\nslop patterns: PASS\ncraft basics: PASS\nPASS: 0 failure(s) across 4 check families (0 disabled in this bar)",
+    "status": 0
+  }
+]
