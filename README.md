@@ -11,6 +11,8 @@ does not, so it drops straight into CI.
 
 ![ci](https://github.com/eliferres/website-bar/actions/workflows/ci.yml/badge.svg)
 
+<img src="demo/terminal.svg" width="660" alt="Terminal session showing website-bar failing a page on five rules, then a clean page passing all four check families.">
+
 ## Quick start
 
 ```bash
