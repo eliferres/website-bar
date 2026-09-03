@@ -24,6 +24,7 @@ import sys
 import urllib.error
 import urllib.parse
 import urllib.request
+from collections.abc import Iterator
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -51,7 +52,9 @@ ACRONYM = re.compile(r"^[A-Z0-9&/.-]+$")
 class Finding:
     """One rule violation, carrying the evidence that proves it."""
 
-    def __init__(self, rule: str, message: str, evidence: str = "", location: str = ""):
+    def __init__(
+        self, rule: str, message: str, evidence: str = "", location: str = ""
+    ) -> None:
         self.rule = rule
         self.message = message
         self.evidence = evidence
@@ -73,7 +76,7 @@ class Page(HTMLParser):
     the source line rather than making the reader search for the string.
     """
 
-    def __init__(self, label: str):
+    def __init__(self, label: str) -> None:
         super().__init__(convert_charrefs=True)
         self.label = label
         self.headings: list[tuple[int, str, int]] = []
@@ -89,7 +92,7 @@ class Page(HTMLParser):
         self._in_style = False
         self._in_script = False
 
-    def handle_starttag(self, tag, attrs):
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         attr = {k.lower(): (v or "") for k, v in attrs}
         line = self.getpos()[0]
         if "style" in attr and attr["style"].strip():
@@ -110,7 +113,7 @@ class Page(HTMLParser):
             self._heading_text = []
             self._heading_line = line
 
-    def handle_endtag(self, tag):
+    def handle_endtag(self, tag: str) -> None:
         if tag == "style":
             self._in_style = False
         elif tag == "script":
@@ -121,7 +124,7 @@ class Page(HTMLParser):
                 self.headings.append((self._heading_level, text, self._heading_line))
             self._heading_level = 0
 
-    def handle_data(self, data):
+    def handle_data(self, data: str) -> None:
         line = self.getpos()[0]
         if self._in_style:
             self.style_blocks.append((data, line))
@@ -142,7 +145,7 @@ class Page(HTMLParser):
 class Source:
     """A stylesheet or inline block, with a label for locating findings."""
 
-    def __init__(self, text: str, label: str, line_offset: int = 0):
+    def __init__(self, text: str, label: str, line_offset: int = 0) -> None:
         self.text = CSS_COMMENT.sub("", text)
         self.label = label
         self.line_offset = line_offset
@@ -191,7 +194,9 @@ def read_stylesheet(href: str, base: str, timeout: float) -> str:
     return (Path(base).parent / href).read_text(encoding="utf-8", errors="replace")
 
 
-def declarations(sources: list[Source], names: tuple[str, ...]):
+def declarations(
+    sources: list[Source], names: tuple[str, ...]
+) -> Iterator[tuple[Source, str, str, int]]:
     """Yield (source, property, value, index) for the properties asked for."""
     for source in sources:
         for match in DECLARATION.finditer(source.text):

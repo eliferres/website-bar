@@ -148,6 +148,22 @@ class CraftBasics(unittest.TestCase):
         self.assertEqual(hits["image-alt"]["evidence"], "chart.png")
         self.assertIn("3 font stacks declared", hits["font-family-count"]["message"])
 
+    def test_color_count_ceiling_fires(self):
+        # The example bar's max_colors is 12; craft.html stays under it, so
+        # color-count has never actually fired in this suite.
+        colors = ", ".join(f"#{n:06x}" for n in range(0x111111, 0x111111 + 13 * 0x010101, 0x010101))
+        page = f"""<html><head><meta name="viewport" content="width=device-width">
+<style>.swatches {{ color: {colors.split(', ')[0]}; }}
+{"".join(f'.c{i} {{ color: {c}; }}' for i, c in enumerate(colors.split(', ')))}
+</style></head><body><img src="a.png" alt="a"></body></html>"""
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "colors.html"
+            path.write_text(page, encoding="utf-8")
+            _, payload = run_json(path)
+        hit = next(f for f in failures(payload, "craft_basics")
+                   if f["rule"] == "color-count")
+        self.assertIn("13 distinct colors, ceiling is 12", hit["message"])
+
 
 class ConfigAndOutput(unittest.TestCase):
     def test_disabling_a_family_skips_it_entirely(self):
