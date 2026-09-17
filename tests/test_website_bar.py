@@ -384,6 +384,30 @@ class InternalFaults(unittest.TestCase):
         self.assertIn("RuntimeError: planted fault", message)
         self.assertNotIn("Traceback", message)
 
+    def test_a_value_fault_inside_a_check_is_blamed_on_the_bar_file(self):
+        # A number no verdict could print used to raise OverflowError,
+        # which the catch around the checks did not cover, so the bar
+        # file's fault read as this tool's.
+        for fault in (ValueError("planted fault"), OverflowError("planted fault")):
+            with self.subTest(fault=type(fault).__name__):
+                def boom(*args, **kwargs):
+                    raise fault
+
+                original = website_bar.check_motion_durations
+                website_bar.check_motion_durations = boom
+                try:
+                    out, err = io.StringIO(), io.StringIO()
+                    with redirect_stdout(out), redirect_stderr(err):
+                        code = website_bar.main([
+                            str(REPO / "demo" / "passing-page.html"),
+                            "--bar", str(EXAMPLE_BAR)])
+                finally:
+                    website_bar.check_motion_durations = original
+                message = err.getvalue()
+                self.assertEqual(code, 2, message)
+                self.assertIn("bar settings could not be applied", message)
+                self.assertNotIn("bug in website-bar", message)
+
     def test_a_fault_outside_the_checks_is_not_blamed_on_the_bar_file(self):
         # Collecting the findings is this tool's own code, not a setting
         # the bar file supplied, so it must not read as a bad bar.

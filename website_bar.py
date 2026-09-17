@@ -450,11 +450,12 @@ def grade(page: Page, sources: list[Source], bar: dict) -> list[dict]:
                 findings = check_slop_patterns(page, config)
             else:
                 findings = check_craft_basics(page, sources, config)
-        except (AttributeError, TypeError) as err:
-            # A setting of the right shape but the wrong type, a number
-            # where a check wants an object. Only the check itself can
-            # catch it, so it is caught here and nowhere wider: a fault
-            # anywhere else is this tool's, not the bar file's.
+        except (AttributeError, TypeError, ValueError, OverflowError) as err:
+            # Whatever a bar setting can still do to a check: the wrong
+            # type, a value it cannot compare, a number it cannot print.
+            # Only the check itself can catch it, so it is caught here
+            # and nowhere wider: a fault anywhere else is this tool's,
+            # not the bar file's.
             raise BarSettingsError(
                 f"bar settings could not be applied: {err}") from err
         results.append({
