@@ -284,6 +284,18 @@ class InternalFaults(unittest.TestCase):
         self.assertNotIn("Traceback", message)
 
 
+class VersionFlag(unittest.TestCase):
+    def test_version_prints_the_command_name_and_version(self):
+        # Written out rather than read from the module, so a version
+        # string that drifts from the last release fails here.
+        result = subprocess.run(
+            [sys.executable, str(REPO / "website_bar.py"), "--version"],
+            cwd=REPO, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout, "website-bar 1.1.0\n")
+        self.assertEqual(result.stderr, "")
+
+
 class ProcessExitCodes(unittest.TestCase):
     """The codes CI reads, taken from a real process rather than main().
 
