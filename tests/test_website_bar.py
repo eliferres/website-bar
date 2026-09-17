@@ -206,6 +206,14 @@ class ConfigAndOutput(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertTrue(output.startswith("website-bar: "), output)
 
+    def test_bar_that_is_not_an_object_exits_two(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            bar = Path(tmp) / "list-bar.json"
+            bar.write_text("[]", encoding="utf-8")
+            code, output = run(REPO / "demo" / "passing-page.html", bar)
+        self.assertEqual(code, 2)
+        self.assertIn("bar file is not a JSON object", output)
+
 
 if __name__ == "__main__":
     unittest.main()

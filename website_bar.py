@@ -412,6 +412,8 @@ def report(results: list[dict], bar_name: str, target: str, notes: list[str]) ->
 
 def load_bar(path: Path) -> dict:
     bar = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(bar, dict):
+        raise ValueError(f"bar file is not a JSON object: {path}")
     unknown = set(bar.get("checks", {})) - set(FAMILY_ORDER)
     if unknown:
         raise ValueError(f"unknown check families in bar: {', '.join(sorted(unknown))}")
