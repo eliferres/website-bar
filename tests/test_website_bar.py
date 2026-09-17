@@ -236,6 +236,14 @@ class ConfigAndOutput(unittest.TestCase):
                 self.assertEqual(len(output.strip().splitlines()), 1, output)
                 self.assertNotIn("Traceback", output)
 
+    def test_a_bar_with_no_checks_key_exits_two(self):
+        for text in ('{"bar": {"name": "empty"}}',
+                     '{"bar": {"name": "typo"}, "Checks": {"craft_basics": {"enabled": true}}}'):
+            with self.subTest(text=text):
+                code, output = self.refuse(text)
+                self.assertEqual(code, 2, output)
+                self.assertIn('has no "checks" to grade with', output)
+
     def refuse(self, text):
         """Grade the clean demo page with a bar file holding this text."""
         with tempfile.TemporaryDirectory() as tmp:

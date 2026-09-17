@@ -422,7 +422,11 @@ def load_bar(path: Path) -> dict:
         raise ValueError(f"bar file is not a JSON object: {path}")
     if not isinstance(bar.get("bar", {}), dict):
         raise ValueError(f'the bar\'s "bar" is not a JSON object: {path}')
-    checks = bar.get("checks", {})
+    if "checks" not in bar:
+        # Without this a misspelled key grades nothing and the page
+        # passes, which is the wrong direction to fail in.
+        raise ValueError(f'the bar has no "checks" to grade with: {path}')
+    checks = bar["checks"]
     if not isinstance(checks, dict):
         raise ValueError(f'the bar\'s "checks" is not a JSON object: {path}')
     unknown = set(checks) - set(FAMILY_ORDER)
