@@ -9,6 +9,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - website-bar installs as a command: `pipx install git+https://github.com/eliferres/website-bar` puts `website-bar` on your PATH, and `website-bar --version` prints the version.
 
+### Fixed
+- The README and the module docstring documented only exit 0 and exit 1. Both now document exit 2, which the tool has always used for bad usage, an unreadable page and an unreadable bar file, so a CI job can tell a failing page from a broken run.
+
 ## [1.1.0](https://github.com/eliferres/website-bar/releases/tag/v1.1.0) - 2026-09-03
 
 ### Added

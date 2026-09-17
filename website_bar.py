@@ -9,7 +9,9 @@ pass or fail, with the exact offending string and where it lives.
 Four check families: headline economy, motion durations, slop patterns,
 craft basics. Each is individually toggleable in the bar config.
 
-Stdlib only. Exit 0 when the page clears the bar, 1 when it does not.
+Stdlib only. Exit 0 when the page clears the bar, 1 when it does not,
+and 2 when the run never happened: bad usage, a page that cannot be
+read or fetched, or a bar file that is missing or not valid JSON.
 
 Usage:
     python3 website_bar.py <url-or-file> --bar config/example-bar.json [--json]

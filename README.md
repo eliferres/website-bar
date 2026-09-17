@@ -3,7 +3,9 @@
 Design taste is usually argued in adjectives. website-bar grades it in numbers. Write a best-in-class standard's measurable habits into one JSON bar and every page you ship gets the same report: rule by rule, pass or fail, with the exact offending string and where it lives. No browser, no dependencies, exit codes for CI.
 
 Point it at a URL or a local HTML file. Exit 0 clears the bar, exit 1
-does not, so it drops straight into CI.
+does not, and exit 2 means the run never happened: bad usage, a page
+that cannot be read or fetched, or a bar file that is missing or not
+valid JSON. In CI, treat 2 as a broken job rather than a failing page.
 
 ![ci](https://github.com/eliferres/website-bar/actions/workflows/ci.yml/badge.svg)
 

@@ -198,6 +198,14 @@ class ConfigAndOutput(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertIn("no such page", output)
 
+    def test_malformed_bar_exits_two_without_a_traceback(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            bar = Path(tmp) / "broken-bar.json"
+            bar.write_text('{"checks": ', encoding="utf-8")
+            code, output = run(REPO / "demo" / "passing-page.html", bar)
+        self.assertEqual(code, 2)
+        self.assertTrue(output.startswith("website-bar: "), output)
+
 
 if __name__ == "__main__":
     unittest.main()
