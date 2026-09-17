@@ -22,7 +22,8 @@ jobs:
       - name: Grade the demo pages against the example bar
         run: |
           python website_bar.py demo/passing-page.html --bar config/example-bar.json
-          ! python website_bar.py demo/failing-page.html --bar config/example-bar.json
+          python website_bar.py demo/failing-page.html --bar config/example-bar.json && code=0 || code=$?
+          [ "$code" = 1 ] || { echo "failing page exited $code, expected 1"; exit 1; }
       - name: Install the package and run the installed command
         run: |
           python -m pip install .
