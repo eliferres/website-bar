@@ -7,6 +7,7 @@ report that names the wrong string is worse than no report.
 
 import io
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -237,6 +238,33 @@ class ConfigAndOutput(unittest.TestCase):
             code, output = run(REPO / "demo" / "passing-page.html", bar)
         self.assertEqual(code, 2)
         self.assertIn("bar file is not a JSON object", output)
+
+
+class ProcessExitCodes(unittest.TestCase):
+    """The codes CI reads, taken from a real process rather than main().
+
+    The CI job gates on the failing demo page exiting exactly 1. That
+    only means "graded and failed" while nothing else can exit 1, so the
+    three codes are asserted here together.
+    """
+
+    def grade(self, target, bar=EXAMPLE_BAR):
+        result = subprocess.run(
+            [sys.executable, str(REPO / "website_bar.py"), str(target), "--bar", str(bar)],
+            cwd=REPO, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        return result.returncode, result.stdout
+
+    def test_the_demo_pages_exit_zero_and_one(self):
+        self.assertEqual(self.grade(REPO / "demo" / "passing-page.html")[0], 0)
+        self.assertEqual(self.grade(REPO / "demo" / "failing-page.html")[0], 1)
+
+    def test_an_unusable_bar_exits_two_rather_than_one(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            bar = Path(tmp) / "bar.json"
+            bar.write_text('{"checks": {"craft_basics": "yes"}}', encoding="utf-8")
+            code, output = self.grade(REPO / "demo" / "failing-page.html", bar)
+        self.assertEqual(code, 2, output)
+        self.assertNotIn("Traceback", output)
 
 
 if __name__ == "__main__":
