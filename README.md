@@ -172,6 +172,16 @@ Every family carries its own `enabled` flag, so a bar can grade only the
 rules you are ready to hold yourself to. Unknown family names are a hard
 error rather than a silent no-op.
 
+The file is checked against that shape when it loads, one setting at a
+time, and the first thing it cannot use is refused with one line naming
+the family and the setting, and exit 2. A setting name no family reads,
+`enabld` for one, is refused the same way, so a typo cannot quietly turn
+a check off. The types are the ones shown above: `enabled` and the
+`require_` flags hold true or false, `banned_openers`, `proper_nouns` and
+`phrases` hold lists of strings, `max_words` maps a heading tag to a
+non-negative number, and every remaining number is non-negative and small
+enough to print in a verdict.
+
 ## The four check families
 
 **Headline economy.** Word-count ceilings per heading level, banned

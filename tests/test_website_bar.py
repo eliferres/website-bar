@@ -218,7 +218,6 @@ class ConfigAndOutput(unittest.TestCase):
         self.assertIn('check family "craft_basics" is not a JSON object', output)
 
     def test_settings_the_checks_cannot_use_exit_two(self):
-        # The shape is right, so only the checks themselves can catch this.
         code, output = self.refuse(
             '{"checks": {"headline_economy": {"enabled": true, "max_words": 7}}}')
         self.assertEqual(code, 2)
@@ -258,6 +257,76 @@ class ConfigAndOutput(unittest.TestCase):
             code, output = run(REPO / "demo" / "passing-page.html", bar)
         self.assertEqual(code, 2)
         self.assertIn("bar file is not a JSON object", output)
+
+
+class BarSettingTypes(unittest.TestCase):
+    """Every setting is checked against SETTING_TYPES when the bar loads.
+
+    A bar file that a check could not use has to be refused before any
+    grading happens, because the alternative is a number nobody wrote
+    reported as a verdict.
+    """
+
+    def refuse(self, family, settings):
+        """Grade the clean demo page with one family replaced."""
+        text = json.dumps({"checks": {family: settings}})
+        with tempfile.TemporaryDirectory() as tmp:
+            bar = Path(tmp) / "bar.json"
+            bar.write_text(text, encoding="utf-8")
+            code, output = run(REPO / "demo" / "passing-page.html", bar)
+        self.assertEqual(code, 2, output)
+        self.assertEqual(len(output.strip().splitlines()), 1, output)
+        self.assertNotIn("Traceback", output)
+        return output
+
+    def test_a_string_where_a_list_of_phrases_belongs_is_refused(self):
+        # It used to match letter by letter and invent 127 failures
+        # against a page with none.
+        output = self.refuse(
+            "slop_patterns", {"enabled": True, "phrases": "delve into"})
+        self.assertIn(
+            'setting "phrases" in check family "slop_patterns" must be'
+            " a list of strings", output)
+
+    def test_a_misspelled_setting_name_is_refused(self):
+        output = self.refuse("craft_basics", {"enabld": True})
+        self.assertIn(
+            'unknown setting "enabld" in check family "craft_basics"', output)
+
+    def test_a_null_where_a_number_belongs_is_refused(self):
+        output = self.refuse("craft_basics", {"enabled": True, "max_colors": None})
+        self.assertIn(
+            'setting "max_colors" in check family "craft_basics" must be'
+            " a non-negative number", output)
+
+    def test_a_negative_allowance_is_refused(self):
+        output = self.refuse(
+            "slop_patterns", {"enabled": True, "max_emoji_bullets": -1})
+        self.assertIn('setting "max_emoji_bullets"', output)
+
+    def test_a_mapping_holding_a_null_is_refused(self):
+        output = self.refuse(
+            "headline_economy", {"enabled": True, "max_words": {"h1": None}})
+        self.assertIn(
+            'setting "max_words" in check family "headline_economy" must be'
+            " an object mapping a name to a non-negative number", output)
+
+    def test_a_number_no_check_could_print_is_refused(self):
+        # 10**400 has no float, so formatting it in a verdict used to
+        # raise OverflowError from inside the check.
+        output = self.refuse(
+            "motion_durations", {"enabled": True, "hard_max_ms": 10 ** 400})
+        self.assertIn('setting "hard_max_ms"', output)
+
+    def test_a_true_boolean_and_a_plain_number_still_grade(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            bar = bar_with(tmp, slop_patterns={
+                "enabled": True, "phrases": ["in today's fast-paced world"],
+                "max_emoji_bullets": 2})
+            code, payload = run_json(FIXTURES / "slop.html", bar)
+        self.assertEqual(code, 1)
+        rules = sorted(f["rule"] for f in failures(payload, "slop_patterns"))
+        self.assertEqual(rules, ["emoji-bullets", "filler-phrase"])
 
 
 class InternalFaults(unittest.TestCase):

@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 import sys
 import urllib.error
@@ -52,6 +53,74 @@ EMOJI = re.compile(
     "[\U0001f300-\U0001faff☀-➿⬀-⯿←-⇿️]"
 )
 ACRONYM = re.compile(r"^[A-Z0-9&/.-]+$")
+
+
+def is_boolean(value: object) -> bool:
+    return isinstance(value, bool)
+
+
+def is_number(value: object) -> bool:
+    """True for a number a check can compare against and print.
+
+    JSON gives integers of any size and, with a literal Infinity, a float
+    no ceiling can be read from, so the value has to survive becoming a
+    float before a check is allowed to see it.
+    """
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return False
+    try:
+        number = float(value)
+    except OverflowError:
+        return False
+    return math.isfinite(number) and number >= 0
+
+
+def is_string_list(value: object) -> bool:
+    return isinstance(value, list) and all(isinstance(item, str) for item in value)
+
+
+def is_number_map(value: object) -> bool:
+    return isinstance(value, dict) and all(
+        isinstance(key, str) and is_number(item) for key, item in value.items())
+
+
+BOOLEAN = ("true or false", is_boolean)
+NUMBER = ("a non-negative number", is_number)
+STRING_LIST = ("a list of strings", is_string_list)
+NUMBER_MAP = ("an object mapping a name to a non-negative number", is_number_map)
+
+# Every setting each check family reads, with the type it must hold. The
+# bar file is graded against this table when it loads, so a check body
+# can use a setting without asking what it is.
+SETTING_TYPES = {
+    "headline_economy": {
+        "enabled": BOOLEAN,
+        "max_words": NUMBER_MAP,
+        "banned_openers": STRING_LIST,
+        "require_sentence_case": BOOLEAN,
+        "title_case_word_allowance": NUMBER,
+        "proper_nouns": STRING_LIST,
+    },
+    "motion_durations": {
+        "enabled": BOOLEAN,
+        "min_ms": NUMBER,
+        "max_ms": NUMBER,
+        "hard_max_ms": NUMBER,
+        "require_reduced_motion": BOOLEAN,
+    },
+    "slop_patterns": {
+        "enabled": BOOLEAN,
+        "phrases": STRING_LIST,
+        "max_emoji_bullets": NUMBER,
+    },
+    "craft_basics": {
+        "enabled": BOOLEAN,
+        "max_font_families": NUMBER,
+        "max_colors": NUMBER,
+        "require_alt_text": BOOLEAN,
+        "require_viewport_meta": BOOLEAN,
+    },
+}
 
 
 class BarSettingsError(ValueError):
@@ -426,9 +495,10 @@ def report(results: list[dict], bar_name: str, target: str, notes: list[str]) ->
 def load_bar(path: Path) -> dict:
     """Read a bar file and refuse anything the checks could not read.
 
-    The shape is checked here, by name, so a bar that is wrong in an
-    ordinary way says which part is wrong instead of surfacing as a
-    type error from the middle of a check.
+    Every value is checked here, by name and by type, against
+    SETTING_TYPES, so a bar that is wrong in an ordinary way says which
+    part is wrong instead of surfacing as a type error from the middle of
+    a check, or worse, as a grade.
     """
     bar = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(bar, dict):
@@ -445,10 +515,23 @@ def load_bar(path: Path) -> dict:
     unknown = set(checks) - set(FAMILY_ORDER)
     if unknown:
         raise ValueError(f"unknown check families in bar: {', '.join(sorted(unknown))}")
-    for family in sorted(checks):
-        if not isinstance(checks[family], dict):
+    for family in FAMILY_ORDER:
+        if family not in checks:
+            continue
+        config = checks[family]
+        if not isinstance(config, dict):
             raise ValueError(
                 f'check family "{family}" is not a JSON object of settings: {path}')
+        for setting in sorted(config):
+            declared = SETTING_TYPES[family].get(setting)
+            if declared is None:
+                raise ValueError(
+                    f'unknown setting "{setting}" in check family "{family}": {path}')
+            expected, holds = declared
+            if not holds(config[setting]):
+                raise ValueError(
+                    f'setting "{setting}" in check family "{family}" must be'
+                    f' {expected}: {path}')
     return bar
 
 
