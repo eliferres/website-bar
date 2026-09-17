@@ -14,6 +14,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 - The demo transcript and the terminal picture showed an abridged report: the header lines, the offending strings and their line numbers were all missing. Both now come from a real run, and a new test replays every recorded command and fails if a single character drifts.
+- The demo picture no longer cuts its long lines off at the right edge: rows wider than the box ran past it mid-word with no ellipsis. Only the drawing changed; the recorded session is untouched.
 - The terminal picture ends on the failing page's verdict instead of cutting off mid-run, and its description and alt text name what it shows; the run on the clean page stays in the walkthrough below it.
 - The CI step that grades the demo pages asserted only that the failing page exited non-zero, so a crashed run counted as a pass. It now requires exit 1 exactly.
 - A bar file holding valid JSON that is not an object, `[]` for one, crashed with a traceback and exit 1. It now refuses with one line naming the file, and exit 2, like every other unreadable bar file.
