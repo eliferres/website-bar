@@ -37,7 +37,12 @@ Zero dependencies, Python 3.9+, no network needed for the demo. The two
 demo pages are the walkthrough below: one fails the example bar in five
 named ways, one clears it.
 
-## The walkthrough
+The whole tool is `website_bar.py`, the worked bar with every option set
+is `config/example-bar.json`, the two graded pages are in `demo/`, and
+`tests/` runs the real CLI over `tests/fixtures/`, small pages with one
+planted defect family each.
+
+## A failing page, then a passing one
 
 Run the failing page:
 
@@ -107,7 +112,7 @@ For CI or a dashboard, add `--json`:
 python3 website_bar.py demo/failing-page.html --bar config/example-bar.json --json
 ```
 
-## The bar format, verbatim
+## Writing a bar
 
 A bar is one JSON file. This is `config/example-bar.json` in full - the
 numbers are illustrative, and replacing them with habits you measured on
@@ -166,18 +171,7 @@ Every family carries its own `enabled` flag, so a bar can grade only the
 rules you are ready to hold yourself to. Unknown family names are a hard
 error rather than a silent no-op.
 
-## What is in the box
-
-| Path | Role |
-|---|---|
-| `website_bar.py` | The whole tool. Parser, four check families, report, CLI. |
-| `config/example-bar.json` | A worked bar config with every option set. |
-| `demo/failing-page.html` | Fails the example bar in five named ways. |
-| `demo/passing-page.html` | Clears it. The two together are the demo. |
-| `tests/test_website_bar.py` | Runs the real CLI over real fixtures, no mocks. |
-| `tests/fixtures/` | Small pages with one planted defect family each. |
-
-## What the four families check
+## The four check families
 
 **Headline economy.** Word-count ceilings per heading level, banned
 filler openers, and a sentence-case rule that flags title-cased headings
@@ -230,6 +224,4 @@ to the tests.
   means "this page keeps the habits we wrote down," never "this page is
   well designed."
 
-## License
-
-MIT
+MIT licensed. See LICENSE.
