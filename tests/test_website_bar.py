@@ -134,6 +134,17 @@ class SlopPatterns(unittest.TestCase):
         self.assertEqual(hit["evidence"].lower(), "in today's fast-paced world")
         self.assertTrue(hit["location"].endswith("slop.html:10"))
 
+    def test_a_page_with_no_emoji_bullets_reports_nothing(self):
+        # An allowance below zero made the count beat it on a page with
+        # no emoji lines at all, and the report reached for a first
+        # bullet that was not there. The bar file cannot carry a negative
+        # allowance any more, so this holds the check itself.
+        page = website_bar.Page("clean.html")
+        page.feed("<html><body><p>Plain copy, no bullets.</p></body></html>")
+        page.close()
+        self.assertEqual(
+            website_bar.check_slop_patterns(page, {"max_emoji_bullets": -1}), [])
+
     def test_emoji_bullets_are_counted_against_the_allowance(self):
         _, payload = run_json(FIXTURES / "slop.html")
         hit = next(f for f in failures(payload, "slop_patterns")

@@ -378,7 +378,7 @@ def check_slop_patterns(page: Page, config: dict) -> list[Finding]:
                     match.group(0), page.at(line)))
     allowance = config.get("max_emoji_bullets", 0)
     bullets = [(t, line) for t, line in page.text_chunks if EMOJI.match(t)]
-    if len(bullets) > allowance:
+    if bullets and len(bullets) > allowance:
         first, line = bullets[0]
         findings.append(Finding(
             "emoji-bullets",
