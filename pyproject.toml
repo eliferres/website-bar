@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "website-bar"
+dynamic = ["version"]
+description = "Grade a web page against a named craft bar defined in config."
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+authors = [{ name = "Eli Ferres" }]
+
+[project.urls]
+Source = "https://github.com/eliferres/website-bar"
+Changelog = "https://github.com/eliferres/website-bar/blob/main/CHANGELOG.md"
+
+[project.scripts]
+website-bar = "website_bar:main"
+
+[tool.setuptools]
+py-modules = ["website_bar"]
+
+[tool.setuptools.dynamic]
+version = { attr = "website_bar.__version__" }

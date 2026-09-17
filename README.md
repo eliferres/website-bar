@@ -11,6 +11,19 @@ does not, so it drops straight into CI.
 
 ## Quick start
 
+Install the command:
+
+```bash
+pipx install git+https://github.com/eliferres/website-bar
+website-bar your-page.html --bar your-bar.json
+```
+
+The tool is not published to a package index; the line above installs it
+straight from the repository.
+
+Or clone it and run the demo pages, which is what the walkthrough below
+does:
+
 ```bash
 git clone https://github.com/eliferres/website-bar.git
 cd website-bar

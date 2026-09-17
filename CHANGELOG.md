@@ -6,7 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
-Nothing yet.
+### Added
+- website-bar installs as a command: `pipx install git+https://github.com/eliferres/website-bar` puts `website-bar` on your PATH, and `website-bar --version` prints the version.
 
 ## [1.1.0](https://github.com/eliferres/website-bar/releases/tag/v1.1.0) - 2026-09-03
 

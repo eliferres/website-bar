@@ -28,6 +28,8 @@ from collections.abc import Iterator
 from html.parser import HTMLParser
 from pathlib import Path
 
+__version__ = "1.1.0"
+
 FAMILY_ORDER = ("headline_economy", "motion_durations", "slop_patterns", "craft_basics")
 FAMILY_TITLES = {
     "headline_economy": "headline economy",
@@ -421,6 +423,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--bar", required=True, help="path to a bar config JSON file")
     parser.add_argument("--json", action="store_true", help="emit machine-readable results")
     parser.add_argument("--timeout", type=float, default=10.0, help="network timeout, seconds")
+    parser.add_argument("--version", action="version", version=f"website-bar {__version__}")
     args = parser.parse_args(argv)
 
     try:
