@@ -9,7 +9,7 @@ valid JSON. In CI, treat 2 as a broken job rather than a failing page.
 
 ![ci](https://github.com/eliferres/website-bar/actions/workflows/ci.yml/badge.svg)
 
-<img src="demo/terminal.svg" width="660" alt="Terminal session showing website-bar reporting five failures on the demo page, each with the offending string and its line, then starting the run on the clean page.">
+<img src="demo/terminal.svg" width="660" alt="Terminal session showing website-bar grading the failing demo page: five failures across headline economy, motion durations and slop patterns, each with the offending string and its line, then the FAIL verdict.">
 
 ## Quick start
 

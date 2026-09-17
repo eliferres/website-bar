@@ -90,8 +90,8 @@ class TranscriptReplay(unittest.TestCase):
 class Picture(unittest.TestCase):
     """Every row drawn in demo/terminal.svg traces back to the transcript.
 
-    The picture holds as many rows as it fits, so it may stop part way
-    through the session; nothing it does show may be invented.
+    The picture holds as many whole commands as it fits, so it may stop
+    before the last entry; nothing it does show may be invented.
     """
 
     def test_every_row_traces_back_to_the_transcript(self):
