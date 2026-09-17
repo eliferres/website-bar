@@ -436,6 +436,23 @@ def load_bar(path: Path) -> dict:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Grade, or report a fault in this tool itself and exit 2.
+
+    Exit 1 has to mean graded and failed, because that is what CI reads.
+    An uncaught exception would exit 1 as well, so anything unexpected is
+    caught here and named as a bug in website-bar instead.
+    """
+    try:
+        return grade_cli(argv)
+    except Exception as err:
+        print(
+            "website-bar: internal fault, this is a bug in website-bar and worth"
+            f" reporting: {type(err).__name__}: {err}",
+            file=sys.stderr)
+        return 2
+
+
+def grade_cli(argv: list[str] | None) -> int:
     parser = argparse.ArgumentParser(
         description="Grade a page against a named craft bar.")
     parser.add_argument("target", help="URL or path to an HTML file")

@@ -252,12 +252,36 @@ class ConfigAndOutput(unittest.TestCase):
         self.assertIn("bar file is not a JSON object", output)
 
 
+class InternalFaults(unittest.TestCase):
+    """A fault in the tool must never be mistaken for a graded failure."""
+
+    def test_an_unexpected_exception_exits_two_and_says_it_is_a_bug(self):
+        def boom(*args, **kwargs):
+            raise RuntimeError("planted fault")
+
+        original = website_bar.grade
+        website_bar.grade = boom
+        try:
+            out, err = io.StringIO(), io.StringIO()
+            with redirect_stdout(out), redirect_stderr(err):
+                code = website_bar.main([
+                    str(REPO / "demo" / "passing-page.html"), "--bar", str(EXAMPLE_BAR)])
+        finally:
+            website_bar.grade = original
+        message = err.getvalue()
+        self.assertEqual(code, 2, message)
+        self.assertEqual(len(message.strip().splitlines()), 1, message)
+        self.assertIn("bug in website-bar", message)
+        self.assertIn("RuntimeError: planted fault", message)
+        self.assertNotIn("Traceback", message)
+
+
 class ProcessExitCodes(unittest.TestCase):
     """The codes CI reads, taken from a real process rather than main().
 
-    The CI job gates on the failing demo page exiting exactly 1. That
-    only means "graded and failed" while nothing else can exit 1, so the
-    three codes are asserted here together.
+    The CI job gates on the failing demo page exiting exactly 1. Nothing
+    else exits 1: every refusal exits 2, and so does an unexpected
+    exception, so the three codes are asserted here together.
     """
 
     def grade(self, target, bar=EXAMPLE_BAR):
