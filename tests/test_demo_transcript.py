@@ -22,7 +22,6 @@ PICTURE = REPO / "demo" / "terminal.svg"
 CHECKOUT_PLACEHOLDER = "/path/to/checkout"
 ELLIPSIS = "…"
 SVG = "{http://www.w3.org/2000/svg}"
-FIRST_ROW_Y = 80  # rows above this are the window chrome, not session text
 
 SKIP = shutil.ignore_patterns(".git", "__pycache__", "*.egg-info", "build", "dist")
 
@@ -55,9 +54,8 @@ def svg_rows():
     """The session rows of the picture, in order, as (kind, text)."""
     rows = []
     for element in ET.parse(PICTURE).getroot().findall(f"{SVG}text"):
-        y = element.get("y")
-        if y is None or int(y) < FIRST_ROW_Y:
-            continue
+        if element.get("font-size"):
+            continue  # the window title bar, the one row with its own size
         tspans = element.findall(f"{SVG}tspan")
         if tspans:
             rows.append(("cmd", tspans[-1].text or ""))
