@@ -19,6 +19,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - The terminal picture ends on the failing page's verdict instead of cutting off mid-run, and its description and alt text name what it shows; the run on the clean page stays in the walkthrough below it.
 - The CI step that grades the demo pages asserted only that the failing page exited non-zero, so a crashed run counted as a pass. It now requires exit 1 exactly.
 - A bar file holding valid JSON that is not an object, `[]` for one, crashed with a traceback and exit 1. It now refuses with one line naming the file, and exit 2, like every other unreadable bar file.
+- A bar whose top-level `bar` key holds null, a string or a list crashed with a traceback after the page was graded. It is now refused when the file loads, with one line naming the file, and exit 2.
 - A bar whose `checks` is null, or whose check family holds a string instead of a settings object, crashed the same way. The bar's shape is now checked when it loads and refused by name, and a setting the checks cannot use is caught before it can become a traceback, so every unusable bar file ends in one line and exit 2.
 - The README and the module docstring documented only exit 0 and exit 1. Both now document exit 2, which the tool has always used for bad usage, an unreadable page and an unreadable bar file, so a CI job can tell a failing page from a broken run.
 

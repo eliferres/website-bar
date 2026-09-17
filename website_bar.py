@@ -420,6 +420,8 @@ def load_bar(path: Path) -> dict:
     bar = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(bar, dict):
         raise ValueError(f"bar file is not a JSON object: {path}")
+    if not isinstance(bar.get("bar", {}), dict):
+        raise ValueError(f'the bar\'s "bar" is not a JSON object: {path}')
     checks = bar.get("checks", {})
     if not isinstance(checks, dict):
         raise ValueError(f'the bar\'s "checks" is not a JSON object: {path}')

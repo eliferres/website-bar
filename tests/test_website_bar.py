@@ -224,6 +224,18 @@ class ConfigAndOutput(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertTrue(output.startswith("website-bar: "), output)
 
+    def test_a_bar_key_that_is_not_an_object_exits_two(self):
+        # The name is read after grading, outside every guard, so a "bar"
+        # of the wrong type used to surface as a traceback at the end.
+        for value in ("null", '"strict"', '["x"]'):
+            with self.subTest(value=value):
+                code, output = self.refuse(
+                    '{"bar": %s, "checks": {"craft_basics": {"enabled": true}}}' % value)
+                self.assertEqual(code, 2, output)
+                self.assertIn('the bar\'s "bar" is not a JSON object', output)
+                self.assertEqual(len(output.strip().splitlines()), 1, output)
+                self.assertNotIn("Traceback", output)
+
     def refuse(self, text):
         """Grade the clean demo page with a bar file holding this text."""
         with tempfile.TemporaryDirectory() as tmp:
