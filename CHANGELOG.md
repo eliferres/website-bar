@@ -10,6 +10,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - website-bar installs as a command: `pipx install git+https://github.com/eliferres/website-bar` puts `website-bar` on your PATH, and `website-bar --version` prints the version.
 
 ### Changed
+- CI runs the tests on Python 3.9, 3.11 and 3.13; 3.13 replaces 3.12, so the newest supported release is covered.
 - Reorganized the README: the walkthrough, the bar format and the check families sit under plainer headings, the file table is one sentence under Quick start, and the license line closes the file.
 
 ### Fixed
