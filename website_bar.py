@@ -54,6 +54,10 @@ EMOJI = re.compile(
 ACRONYM = re.compile(r"^[A-Z0-9&/.-]+$")
 
 
+class BarSettingsError(ValueError):
+    """A bar setting of the right shape that a check cannot use."""
+
+
 class Finding:
     """One rule violation, carrying the evidence that proves it."""
 
@@ -368,14 +372,22 @@ def grade(page: Page, sources: list[Source], bar: dict) -> list[dict]:
         if not config.get("enabled", False):
             results.append({"family": family, "status": "skipped", "failures": []})
             continue
-        if family == "headline_economy":
-            findings = check_headline_economy(page, config)
-        elif family == "motion_durations":
-            findings = check_motion_durations(page, sources, config)
-        elif family == "slop_patterns":
-            findings = check_slop_patterns(page, config)
-        else:
-            findings = check_craft_basics(page, sources, config)
+        try:
+            if family == "headline_economy":
+                findings = check_headline_economy(page, config)
+            elif family == "motion_durations":
+                findings = check_motion_durations(page, sources, config)
+            elif family == "slop_patterns":
+                findings = check_slop_patterns(page, config)
+            else:
+                findings = check_craft_basics(page, sources, config)
+        except (AttributeError, TypeError) as err:
+            # A setting of the right shape but the wrong type, a number
+            # where a check wants an object. Only the check itself can
+            # catch it, so it is caught here and nowhere wider: a fault
+            # anywhere else is this tool's, not the bar file's.
+            raise BarSettingsError(
+                f"bar settings could not be applied: {err}") from err
         results.append({
             "family": family,
             "status": "fail" if findings else "pass",
@@ -480,11 +492,9 @@ def grade_cli(argv: list[str] | None) -> int:
     sources, notes = collect_css(page, base, args.timeout)
     try:
         results = grade(page, sources, bar)
-    except (AttributeError, TypeError) as err:
-        # The backstop for a setting of the right shape but the wrong
-        # type, a number where a check wants an object: a bad bar file
-        # is still one line and exit 2, never a traceback.
-        print(f"website-bar: bar settings could not be applied: {err}", file=sys.stderr)
+    except BarSettingsError as err:
+        # A bad bar file is one line and exit 2, never a traceback.
+        print(f"website-bar: {err}", file=sys.stderr)
         return 2
     bar_name = bar.get("bar", {}).get("name", Path(args.bar).stem)
     failures = sum(len(r["failures"]) for r in results)

@@ -283,6 +283,26 @@ class InternalFaults(unittest.TestCase):
         self.assertIn("RuntimeError: planted fault", message)
         self.assertNotIn("Traceback", message)
 
+    def test_a_fault_outside_the_checks_is_not_blamed_on_the_bar_file(self):
+        # Collecting the findings is this tool's own code, not a setting
+        # the bar file supplied, so it must not read as a bad bar.
+        def boom(self):
+            raise AttributeError("planted fault")
+
+        original = website_bar.Finding.as_dict
+        website_bar.Finding.as_dict = boom
+        try:
+            out, err = io.StringIO(), io.StringIO()
+            with redirect_stdout(out), redirect_stderr(err):
+                code = website_bar.main([
+                    str(REPO / "demo" / "failing-page.html"), "--bar", str(EXAMPLE_BAR)])
+        finally:
+            website_bar.Finding.as_dict = original
+        message = err.getvalue()
+        self.assertEqual(code, 2, message)
+        self.assertIn("bug in website-bar", message)
+        self.assertNotIn("bar settings could not be applied", message)
+
 
 class VersionFlag(unittest.TestCase):
     def test_version_prints_the_command_name_and_version(self):
