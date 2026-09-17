@@ -67,9 +67,13 @@ def svg_rows():
     return rows
 
 
-def untrimmed(row):
-    """A picture row with its one trailing ellipsis removed."""
-    return row[: -len(ELLIPSIS)] if row.endswith(ELLIPSIS) else row
+def shows_whole(row, line):
+    """A row is the output line itself, or that line cut once at the end."""
+    if row == line:
+        return True
+    head = row[: -len(ELLIPSIS)]
+    return (row.endswith(ELLIPSIS) and row.count(ELLIPSIS) == 1
+            and len(head) < len(line) and line.startswith(head))
 
 
 class TranscriptReplay(unittest.TestCase):
@@ -86,43 +90,53 @@ class TranscriptReplay(unittest.TestCase):
 
 
 class Picture(unittest.TestCase):
-    """Every row drawn in demo/terminal.svg traces back to the transcript.
+    """demo/terminal.svg holds whole commands with all of their output.
 
-    The picture holds as many whole commands as it fits, so it may stop
-    before the last entry; nothing it does show may be invented.
+    The picture fits as many whole commands as it can, so it may stop before
+    the last entry, but only between commands: nothing it shows may be
+    invented, nothing an entry printed may be left out, and no row may sit
+    out of order.
     """
 
-    def test_every_row_traces_back_to_the_transcript(self):
+    def test_the_picture_shows_whole_entries_in_order(self):
         entries = json.loads(TRANSCRIPT.read_text(encoding="utf-8"))
         rows = svg_rows()
-        index, chunks, out_lines = -1, [], []
-        for kind, text in rows:
-            if kind == "cmd":
+        self.assertTrue(rows, "the picture has no session rows")
+        index = 0
+        for entry in entries:
+            if index == len(rows):
+                break  # the picture stopped at a command boundary
+            kind, text = rows[index]
+            self.assertEqual(kind, "cmd", f"row {index + 1} should open {entry['cmd']}")
+            chunks = [text]
+            index += 1
+            while index < len(rows) and rows[index][0] == "cmd-cont":
+                chunks.append(rows[index][1])
                 index += 1
-                self.assertLess(index, len(entries), f"extra command row: {text}")
-                chunks = [text]
-                out_lines = [l for l in entries[index]["out"].splitlines() if l.strip()]
-                self.assertTrue(rebuild(chunks, entries[index]["cmd"]), text)
-            elif kind == "cmd-cont":
-                chunks.append(text)
-                self.assertTrue(rebuild(chunks, entries[index]["cmd"]),
-                                " ".join(chunks))
-            else:
-                self.assertTrue(out_lines, f"output row with no line left: {text}")
-                line = out_lines.pop(0)
+            self.assertEqual(rejoin(chunks), entry["cmd"],
+                             "the command rows do not rebuild the recorded command")
+            for line in [l for l in entry["out"].splitlines() if l.strip()]:
+                self.assertLess(index, len(rows),
+                                f"the picture stops inside {entry['cmd']}, before {line!r}")
+                kind, text = rows[index]
+                self.assertEqual(kind, "out", f"row {index + 1} should be output line {line!r}")
                 self.assertTrue(
-                    line.startswith(untrimmed(text)),
-                    f"picture row {text!r} is not a prefix of output line {line!r}")
+                    shows_whole(text, line),
+                    f"row {index + 1} is {text!r}, expected {line!r} whole or end-trimmed "
+                    "with one ellipsis")
+                index += 1
+        self.assertEqual(index, len(rows),
+                         f"{len(rows) - index} drawn row(s) the transcript does not account for")
 
     def test_the_readme_shows_the_picture(self):
         self.assertIn('src="demo/terminal.svg"',
                       (REPO / "README.md").read_text(encoding="utf-8"))
 
 
-def rebuild(chunks, cmd):
-    """True when the wrapped command rows so far rebuild the start of cmd."""
-    joined = " ".join(c[:-2] if c.endswith(" \\") else c for c in chunks)
-    return cmd.startswith(joined)
+def rejoin(chunks):
+    """Undo the drawing's wrapping: a wrapped row ends in " \\" and the chunks
+    rejoin with the one space the break ate."""
+    return " ".join(c[:-2] if c.endswith(" \\") else c for c in chunks)
 
 
 def regenerate():
