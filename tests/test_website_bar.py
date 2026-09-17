@@ -206,6 +206,30 @@ class ConfigAndOutput(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertTrue(output.startswith("website-bar: "), output)
 
+    def test_bar_with_a_null_checks_value_exits_two(self):
+        code, output = self.refuse('{"checks": null}')
+        self.assertEqual(code, 2)
+        self.assertIn('"checks" is not a JSON object', output)
+
+    def test_family_settings_that_are_not_an_object_exit_two(self):
+        code, output = self.refuse('{"checks": {"craft_basics": "yes"}}')
+        self.assertEqual(code, 2)
+        self.assertIn('check family "craft_basics" is not a JSON object', output)
+
+    def test_settings_the_checks_cannot_use_exit_two(self):
+        # The shape is right, so only the checks themselves can catch this.
+        code, output = self.refuse(
+            '{"checks": {"headline_economy": {"enabled": true, "max_words": 7}}}')
+        self.assertEqual(code, 2)
+        self.assertTrue(output.startswith("website-bar: "), output)
+
+    def refuse(self, text):
+        """Grade the clean demo page with a bar file holding this text."""
+        with tempfile.TemporaryDirectory() as tmp:
+            bar = Path(tmp) / "bar.json"
+            bar.write_text(text, encoding="utf-8")
+            return run(REPO / "demo" / "passing-page.html", bar)
+
     def test_bar_that_is_not_an_object_exits_two(self):
         with tempfile.TemporaryDirectory() as tmp:
             bar = Path(tmp) / "list-bar.json"

@@ -411,12 +411,25 @@ def report(results: list[dict], bar_name: str, target: str, notes: list[str]) ->
 
 
 def load_bar(path: Path) -> dict:
+    """Read a bar file and refuse anything the checks could not read.
+
+    The shape is checked here, by name, so a bar that is wrong in an
+    ordinary way says which part is wrong instead of surfacing as a
+    type error from the middle of a check.
+    """
     bar = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(bar, dict):
         raise ValueError(f"bar file is not a JSON object: {path}")
-    unknown = set(bar.get("checks", {})) - set(FAMILY_ORDER)
+    checks = bar.get("checks", {})
+    if not isinstance(checks, dict):
+        raise ValueError(f'the bar\'s "checks" is not a JSON object: {path}')
+    unknown = set(checks) - set(FAMILY_ORDER)
     if unknown:
         raise ValueError(f"unknown check families in bar: {', '.join(sorted(unknown))}")
+    for family in sorted(checks):
+        if not isinstance(checks[family], dict):
+            raise ValueError(
+                f'check family "{family}" is not a JSON object of settings: {path}')
     return bar
 
 
@@ -441,7 +454,14 @@ def main(argv: list[str] | None = None) -> int:
     page.feed(html)
     page.close()
     sources, notes = collect_css(page, base, args.timeout)
-    results = grade(page, sources, bar)
+    try:
+        results = grade(page, sources, bar)
+    except (AttributeError, TypeError) as err:
+        # The backstop for a setting of the right shape but the wrong
+        # type, a number where a check wants an object: a bad bar file
+        # is still one line and exit 2, never a traceback.
+        print(f"website-bar: bar settings could not be applied: {err}", file=sys.stderr)
+        return 2
     bar_name = bar.get("bar", {}).get("name", Path(args.bar).stem)
     failures = sum(len(r["failures"]) for r in results)
 
