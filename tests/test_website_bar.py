@@ -243,6 +243,27 @@ class ConfigAndOutput(unittest.TestCase):
                 self.assertEqual(code, 2, output)
                 self.assertIn('has no "checks" to grade with', output)
 
+    def test_a_bar_with_nothing_enabled_exits_two(self):
+        for text in ('{"checks": {}}',
+                     '{"checks": {"craft_basics": {"enabled": false},'
+                     ' "slop_patterns": {"enabled": false}}}'):
+            with self.subTest(text=text):
+                code, output = self.refuse(text)
+                self.assertEqual(code, 2, output)
+                self.assertIn("no check family in the bar is enabled", output)
+                self.assertEqual(len(output.strip().splitlines()), 1, output)
+
+    def test_disabling_some_families_still_grades_the_rest(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            bar = bar_with(
+                tmp,
+                craft_basics={"enabled": False},
+                motion_durations={"enabled": False},
+                slop_patterns={"enabled": False})
+            code, output = run(REPO / "demo" / "failing-page.html", bar)
+        self.assertEqual(code, 1, output)
+        self.assertIn("across 1 check families (3 disabled in this bar)", output)
+
     def refuse(self, text):
         """Grade the clean demo page with a bar file holding this text."""
         with tempfile.TemporaryDirectory() as tmp:

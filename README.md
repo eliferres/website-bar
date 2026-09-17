@@ -176,7 +176,8 @@ The file is checked against that shape when it loads, one setting at a
 time, and the first thing it cannot use is refused with one line naming
 the family and the setting, and exit 2. A setting name no family reads,
 `enabld` for one, is refused the same way, so a typo cannot quietly turn
-a check off. The types are the ones shown above: `enabled` and the
+a check off. A bar with no family enabled at all is refused too: a run
+that graded nothing is not a passing page. The types are the ones shown above: `enabled` and the
 `require_` flags hold true or false, `banned_openers`, `proper_nouns` and
 `phrases` hold lists of strings, `max_words` maps a heading tag to a
 non-negative number, and every remaining number is non-negative and small

@@ -532,6 +532,12 @@ def load_bar(path: Path) -> dict:
                 raise ValueError(
                     f'setting "{setting}" in check family "{family}" must be'
                     f' {expected}: {path}')
+    if not any(checks.get(family, {}).get("enabled") for family in FAMILY_ORDER):
+        # Exit 2 means the run never happened, and a run in which no
+        # family graded anything is exactly that, whatever it would
+        # otherwise print.
+        raise ValueError(
+            f"no check family in the bar is enabled, so nothing would be graded: {path}")
     return bar
 
 
