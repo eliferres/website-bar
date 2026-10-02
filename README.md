@@ -187,7 +187,8 @@ of their rules is opt-in; motion durations and slop patterns grade on
 defaults, so `enabled` alone is enough for them. The types are the ones shown above: `enabled` and the
 `require_` flags hold true or false, `banned_openers`, `proper_nouns` and
 `phrases` hold lists of strings, `max_words` maps a heading tag, `h1`
-to `h6`, to a non-negative number and refuses any other key, and every remaining number is non-negative and small
+to `h6` in any case but each tag once, to a non-negative number and
+refuses any other key, and every remaining number is non-negative and small
 enough to print in a verdict.
 
 ## The four check families

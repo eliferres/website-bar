@@ -574,6 +574,15 @@ class BarSettingTypes(unittest.TestCase):
                     'setting "max_words" in check family "headline_economy" has'
                     ' the key "%s", which is not a heading tag h1 to h6' % key, output)
 
+    def test_a_heading_tag_given_twice_in_different_case_is_refused(self):
+        # Lowercased into one dict, the later key won: {"h1": 3, "H1": 9}
+        # let a six-word h1 pass a ceiling of three.
+        output = self.refuse(
+            "headline_economy", {"enabled": True, "max_words": {"h1": 3, "H1": 9}})
+        self.assertIn(
+            'setting "max_words" in check family "headline_economy" gives h1'
+            ' a ceiling twice ("H1", "h1")', output)
+
     def test_every_heading_tag_is_accepted_as_a_word_ceiling_key(self):
         with tempfile.TemporaryDirectory() as tmp:
             bar = bar_with(tmp, headline_economy={

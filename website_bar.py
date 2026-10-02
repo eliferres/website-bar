@@ -674,6 +674,15 @@ def load_bar(path: Path) -> dict:
                             f'setting "{setting}" in check family "{family}" has'
                             f' the key "{key}", which is not a heading tag h1 to h6:'
                             f' {path}')
+                # Keys are matched without case, so "h1" and "H1" are one
+                # heading, and whichever came last would quietly win.
+                for tag in HEADINGS:
+                    spellings = sorted(key for key in value if key.lower() == tag)
+                    if len(spellings) > 1:
+                        quoted = ", ".join('"%s"' % key for key in spellings)
+                        raise ValueError(
+                            f'setting "{setting}" in check family "{family}" gives'
+                            f' {tag} a ceiling twice ({quoted}): {path}')
     for family, rules in RULE_SETTINGS.items():
         config = checks.get(family, {})
         if config.get("enabled") and not any(switches_on(config.get(r)) for r in rules):
