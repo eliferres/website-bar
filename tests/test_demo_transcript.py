@@ -1,4 +1,4 @@
-"""The demo receipt: demo/transcript.json is replayed, not typed.
+"""The demo transcript: demo/transcript.json is replayed, not typed.
 
 Every entry is run with bash in a throwaway copy of the repository and
 its combined output and exit code must match the recorded ones exactly,

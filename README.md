@@ -203,7 +203,7 @@ mistaken for durations. If the page animates at all, it owes a
 
 **Slop patterns.** Configurable filler phrases matched against the
 visible copy, each hit reported with its exact text and line, plus an
-emoji-bullet wall counter for the design-side version of the same tell.
+emoji-bullet counter for the design-side version of the same tell.
 
 **Craft basics.** Distinct font stacks, distinct colors, image alt
 coverage, and the viewport meta tag. Each individually toggleable,
