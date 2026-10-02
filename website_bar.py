@@ -53,6 +53,17 @@ EMOJI = re.compile(
     "[\U0001f300-\U0001faff☀-➿⬀-⯿←-⇿️]"
 )
 ACRONYM = re.compile(r"^[A-Z0-9&/.-]+$")
+HEADINGS = ("h1", "h2", "h3", "h4", "h5", "h6")
+# Elements that end a word when they sit inside a heading: void elements
+# such as <br> and <img>, and block elements, which start a new line.
+# <wbr> is left out on purpose: it marks where a long word may break, so
+# the letters on either side are still one word.
+WORD_BREAKING = frozenset((
+    "address", "area", "article", "aside", "blockquote", "br", "dd", "details",
+    "div", "dl", "dt", "embed", "fieldset", "figcaption", "figure", "footer",
+    "form", "header", "hr", "img", "input", "li", "main", "nav", "ol", "p",
+    "pre", "section", "source", "table", "td", "th", "tr", "track", "ul",
+))
 
 
 def is_boolean(value: object) -> bool:
@@ -186,21 +197,25 @@ class Page(HTMLParser):
             self.images.append((attr.get("src", ""), attr.get("alt"), line))
         elif tag == "meta" and attr.get("name", "").lower() == "viewport":
             self.has_viewport = True
-        elif tag in ("h1", "h2", "h3", "h4", "h5", "h6"):
+        elif tag in HEADINGS:
             self._heading_level = int(tag[1])
             self._heading_text = []
             self._heading_line = line
+        if self._heading_level and tag in WORD_BREAKING:
+            self._heading_text.append(" ")
 
     def handle_endtag(self, tag: str) -> None:
         if tag == "style":
             self._in_style = False
         elif tag == "script":
             self._in_script = False
-        elif tag in ("h1", "h2", "h3", "h4", "h5", "h6") and self._heading_level:
+        elif tag in HEADINGS and self._heading_level:
             text = " ".join("".join(self._heading_text).split())
             if text:
                 self.headings.append((self._heading_level, text, self._heading_line))
             self._heading_level = 0
+        if self._heading_level and tag in WORD_BREAKING:
+            self._heading_text.append(" ")
 
     def handle_data(self, data: str) -> None:
         line = self.getpos()[0]

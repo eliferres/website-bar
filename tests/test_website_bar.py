@@ -93,6 +93,31 @@ class HeadlineEconomy(unittest.TestCase):
         self.assertIn("For", hit["message"])
         self.assertIn("Modern", hit["message"])
 
+    def test_a_line_break_inside_a_heading_separates_its_words(self):
+        # The heading text used to be joined with nothing between the
+        # pieces, so "platform<br>to" counted as one word and the ceiling
+        # never fired; "Welcome<br>to" slipped past the opener the same way.
+        with tempfile.TemporaryDirectory() as tmp:
+            page = Path(tmp) / "breaks.html"
+            page.write_text(
+                "<html><body>\n"
+                "<h1>Ship the whole platform<br>to every marketing team</h1>\n"
+                "<h2>Welcome<br/>to the show</h2>\n"
+                "<h2>First line<div>second line</div>end</h2>\n"
+                "</body></html>\n", encoding="utf-8")
+            bar = bar_with(tmp, headline_economy={
+                "enabled": True, "max_words": {"h1": 7, "h2": 4},
+                "banned_openers": ["Welcome to"]})
+            code, payload = run_json(page, bar)
+        hits = failures(payload, "headline_economy")
+        self.assertEqual(code, 1)
+        self.assertEqual(
+            [(f["rule"], f["evidence"]) for f in hits],
+            [("h1-word-ceiling", "Ship the whole platform to every marketing team"),
+             ("banned-opener", "Welcome to the show"),
+             ("h2-word-ceiling", "First line second line end")])
+        self.assertIn("8 words, ceiling is 7", hits[0]["message"])
+
 
 class MotionDurations(unittest.TestCase):
     def test_linked_stylesheet_durations_are_graded_and_located(self):
