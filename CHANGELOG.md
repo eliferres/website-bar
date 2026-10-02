@@ -8,6 +8,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 - website-bar installs as a command: `pipx install git+https://github.com/eliferres/website-bar` puts `website-bar` on your PATH, and `website-bar --version` prints the version.
+- Stylesheets pulled in with `@import` are now read and graded, from `<style>` blocks and from linked or imported stylesheets, relative paths resolved against the sheet that holds the import and absolute URLs fetched as written. Each stylesheet is read once per page, which also ends an import cycle, and a chain more than ten imports deep stops the run with one line and exit 2. A sluggish transition one import away from the page used to pass unseen.
 
 ### Changed
 - CI runs the tests on Python 3.9, 3.11 and 3.13; 3.13 replaces 3.12, so the newest supported release is covered.

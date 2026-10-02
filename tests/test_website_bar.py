@@ -160,6 +160,97 @@ class MotionDurations(unittest.TestCase):
             "stylesheet not read: https://example.com/site.css"
             " (remote stylesheet on a local page)"])
 
+    def import_page(self, tmp, head):
+        page = Path(tmp) / "page.html"
+        page.write_text(
+            '<html><head><meta name="viewport" content="width=device-width">'
+            + head + "</head><body><h1>Short heading</h1></body></html>",
+            encoding="utf-8")
+        return page
+
+    def test_css_pulled_in_by_import_is_graded_where_it_lives(self):
+        # @import was never followed, so a sluggish transition one import
+        # away from the page passed. The nested sheet imports its parent
+        # back, which must be read once, not forever.
+        with tempfile.TemporaryDirectory() as tmp:
+            css = Path(tmp) / "css"
+            css.mkdir()
+            (css / "theme.css").write_text(
+                '@import url("parts/slow.css");\n.a { transition: color 200ms; }\n',
+                encoding="utf-8")
+            (css / "parts").mkdir()
+            (css / "parts" / "slow.css").write_text(
+                "@import '../theme.css';\n\n.b { transition: opacity 1500ms; }\n",
+                encoding="utf-8")
+            page = self.import_page(
+                tmp, "<style>@import 'css/theme.css' screen;"
+                     " @media (prefers-reduced-motion: reduce) { * { transition: none } }"
+                     "</style>")
+            code, payload = run_json(page)
+        hits = [f for f in failures(payload, "motion_durations")
+                if f["rule"] == "duration-bounds"]
+        self.assertEqual(code, 1, payload)
+        self.assertEqual(
+            [(f["message"], f["location"]) for f in hits],
+            [("1500ms is past the absolute ceiling of 700ms", "css/parts/slow.css:3")])
+
+    def test_an_import_that_cannot_be_read_exits_two_and_names_it(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            (Path(tmp) / "site.css").write_text('@import "gone.css";\n', encoding="utf-8")
+            page = self.import_page(tmp, '<link rel="stylesheet" href="site.css">')
+            code, output = run(page)
+        self.assertEqual(code, 2, output)
+        self.assertEqual(len(output.strip().splitlines()), 1, output)
+        self.assertTrue(output.startswith("website-bar: stylesheet not read: gone.css"),
+                        output)
+
+    def test_imports_nested_past_the_depth_limit_exit_two(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            depth = website_bar.MAX_IMPORT_DEPTH + 1
+            for n in range(depth + 1):
+                (Path(tmp) / f"s{n}.css").write_text(
+                    f'@import "s{n + 1}.css";\n' if n < depth else "", encoding="utf-8")
+            page = self.import_page(tmp, '<link rel="stylesheet" href="s0.css">')
+            code, output = run(page)
+        self.assertEqual(code, 2, output)
+        self.assertIn("imports nest deeper than %d levels" % website_bar.MAX_IMPORT_DEPTH,
+                      output)
+
+    def test_imports_on_a_served_page_resolve_relative_and_absolute_urls(self):
+        # A server on the loopback interface, so the URL path runs for
+        # real without leaving the machine.
+        import functools
+        import http.server
+        import threading
+        with tempfile.TemporaryDirectory() as tmp:
+            class Quiet(http.server.SimpleHTTPRequestHandler):
+                def log_message(self, *args):
+                    pass
+
+            handler = functools.partial(Quiet, directory=tmp)
+            server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
+            threading.Thread(target=server.serve_forever, daemon=True).start()
+            self.addCleanup(server.server_close)
+            self.addCleanup(server.shutdown)
+            root = "http://127.0.0.1:%d" % server.server_port
+            (Path(tmp) / "css").mkdir()
+            (Path(tmp) / "css" / "site.css").write_text(
+                '@import "%s/css/abs.css";\n@import url(rel.css);\n' % root,
+                encoding="utf-8")
+            (Path(tmp) / "css" / "abs.css").write_text(
+                ".a { transition: color 900ms; }\n", encoding="utf-8")
+            (Path(tmp) / "css" / "rel.css").write_text(
+                ".b { transition: color 1200ms; }\n", encoding="utf-8")
+            self.import_page(tmp, '<link rel="stylesheet" href="/css/site.css">')
+            _, payload = run_json(root + "/page.html")
+        located = sorted((f["message"], f["location"])
+                         for f in failures(payload, "motion_durations")
+                         if f["rule"] == "duration-bounds")
+        self.assertEqual(located, [
+            ("1200ms is past the absolute ceiling of 700ms", root + "/css/rel.css:1"),
+            ("900ms is past the absolute ceiling of 700ms", root + "/css/abs.css:1"),
+        ])
+
     def test_time_units_in_capitals_are_read(self):
         # CSS units are case-insensitive; 1500MS used to match nothing.
         with tempfile.TemporaryDirectory() as tmp:

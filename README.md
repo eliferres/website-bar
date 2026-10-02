@@ -194,7 +194,8 @@ while ignoring acronyms and a configured proper-noun list. Long headings
 are the most reliable single tell of copy nobody edited.
 
 **Motion durations.** Every `transition` and `animation` duration in
-inline styles, `<style>` blocks, and linked stylesheets, graded against a
+inline styles, `<style>` blocks, linked stylesheets and the stylesheets
+they pull in with `@import`, graded against a
 floor and a ceiling: below the floor reads as jarring, above it as
 sluggish, past the hard ceiling as broken. Shorthand delays are not
 mistaken for durations. If the page animates at all, it owes a
@@ -227,8 +228,8 @@ to the tests.
 - Static analysis only. Nothing is rendered and no JavaScript runs, so
   computed styles, CSS-in-JS, and motion injected at runtime are
   invisible. A page can pass here and still animate badly in a browser.
-- A local page is graded offline, so a stylesheet it links by an
-  `http` or `https` URL, a CDN font sheet for one, is not fetched. The
+- A local page is graded offline, so a stylesheet it links or imports
+  by an `http` or `https` URL, a CDN font sheet for one, is not fetched. The
   report names each one in a note; grade the deployed URL to include it.
 - Font and color counts are approximate: they count declarations in the
   source, not what actually paints. Design tokens and unused rules both

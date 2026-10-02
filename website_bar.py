@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import re
 import sys
 import urllib.error
@@ -47,6 +48,11 @@ CSS_COMMENT = re.compile(r"/\*.*?\*/", re.S)
 DECLARATION = re.compile(r"([a-zA-Z-]+)\s*:\s*([^;{}]+)")
 # CSS units are case-insensitive: 1500MS is 1500ms.
 TIME_VALUE = re.compile(r"(-?\d*\.?\d+)(ms|s)\b", re.I)
+# @import "x.css", @import 'x.css', and @import url(x.css) with or
+# without quotes; anything after the target (media queries, layer names)
+# is left alone, since every imported rule is graded regardless.
+IMPORT = re.compile(
+    r"""@import\s+(?:url\(\s*(['"]?)([^'")]+)\1\s*\)|(['"])([^'"]+)\3)""", re.I)
 HEX_COLOR = re.compile(r"#[0-9a-fA-F]{3,8}\b")
 FUNC_COLOR = re.compile(r"\b(?:rgba?|hsla?)\([^)]*\)")
 # The blocks people actually reach for as bullet glyphs: pictographs,
@@ -286,43 +292,110 @@ def read_target(target: str, timeout: float) -> tuple[str, str, str]:
 
 
 class StylesheetError(Exception):
-    """A stylesheet the page links that could not be read."""
+    """A stylesheet the page links or imports that could not be read."""
+
+
+# How many @import hops are followed from a page before the run stops.
+# Real sites nest two or three deep; a chain past this is generated or
+# broken, and grading the part above the cut would pass on partial CSS.
+MAX_IMPORT_DEPTH = 10
 
 
 def collect_css(page: Page, base: str, timeout: float) -> tuple[list[Source], list[str]]:
-    """Gather inline styles, <style> blocks, and linked stylesheets.
+    """Gather inline styles, <style> blocks, linked and imported stylesheets.
 
     A stylesheet that cannot be read stops the run: grading the page on a
     fraction of its CSS and printing PASS would be a verdict on a page
     nobody fully read. A remote stylesheet on a local page is the one
     exception, because a local page is graded offline by design; it is
     named in a note instead.
+
+    Each stylesheet is read once per page, whether linked, imported, or
+    both, which is also what stops an import cycle.
     """
     sources = [Source(css, f"{page.label} {where}", line) for css, where, line in page.inline_styles]
-    sources += [Source(css, page.label, line) for css, line in page.style_blocks]
-    notes = []
+    notes: list[str] = []
+    seen: set[str] = set()
+    for css, line in page.style_blocks:
+        sources.append(Source(css, page.label, line))
+        sources += imported(sources[-1], base, base, 1, seen, notes, timeout)
     for href in page.stylesheet_hrefs:
-        if is_url(href) and not is_url(base):
-            notes.append(f"stylesheet not read: {href} (remote stylesheet on a local page)")
-            continue
-        try:
-            sources.append(Source(read_stylesheet(href, base, timeout), href, 1))
-        except (OSError, ValueError, urllib.error.URLError) as err:
-            raise StylesheetError(f"stylesheet not read: {href} ({err})") from err
+        sources += read_sheet(href, href, base, base, 0, seen, notes, timeout)
     return sources, notes
+
+
+def read_sheet(
+    href: str, label: str, importer: str, page_base: str, depth: int,
+    seen: set[str], notes: list[str], timeout: float,
+) -> list[Source]:
+    """Read one stylesheet and everything it imports, in that order.
+
+    `importer` is the location of whatever named the stylesheet, so a
+    relative path resolves the way a browser resolves it: against the
+    sheet that holds the @import, not the page.
+    """
+    if is_url(href) and not is_url(importer):
+        notes.append(f"stylesheet not read: {label} (remote stylesheet on a local page)")
+        return []
+    location = locate(href, importer)
+    if location in seen:
+        return []
+    seen.add(location)
+    try:
+        source = Source(read_stylesheet(location, timeout), label, 1)
+    except (OSError, ValueError, urllib.error.URLError) as err:
+        raise StylesheetError(f"stylesheet not read: {label} ({err})") from err
+    return [source] + imported(source, location, page_base, depth + 1, seen, notes, timeout)
+
+
+def imported(
+    source: Source, location: str, page_base: str, depth: int,
+    seen: set[str], notes: list[str], timeout: float,
+) -> list[Source]:
+    """The stylesheets a source pulls in with @import, read recursively."""
+    sources = []
+    for match in IMPORT.finditer(source.text):
+        href = (match.group(2) or match.group(4)).strip()
+        if depth > MAX_IMPORT_DEPTH:
+            raise StylesheetError(
+                f"stylesheet not read: {href} (imports nest deeper than"
+                f" {MAX_IMPORT_DEPTH} levels)")
+        sources += read_sheet(href, label_for(href, location, page_base), location,
+                              page_base, depth, seen, notes, timeout)
+    return sources
+
+
+def locate(href: str, importer: str) -> str:
+    """Where a stylesheet lives: a URL, or a resolved local path."""
+    if is_url(importer):
+        return urllib.parse.urljoin(importer, href)
+    return str((Path(importer).parent / href).resolve())
+
+
+def label_for(href: str, importer: str, page_base: str) -> str:
+    """Name an imported sheet so a finding points at the right file.
+
+    The text after @import is relative to the sheet that holds it, so on
+    its own it can name the wrong file; the label is the full URL on a
+    served page and the path from the page's folder on a local one.
+    """
+    if is_url(importer):
+        return urllib.parse.urljoin(importer, href)
+    if is_url(href):
+        return href
+    return os.path.relpath(locate(href, importer), Path(page_base).resolve().parent)
 
 
 def is_url(text: str) -> bool:
     return re.match(r"^https?://", text) is not None
 
 
-def read_stylesheet(href: str, base: str, timeout: float) -> str:
-    if is_url(base):
-        url = urllib.parse.urljoin(base, href)
-        with urllib.request.urlopen(url, timeout=timeout) as response:
+def read_stylesheet(location: str, timeout: float) -> str:
+    if is_url(location):
+        with urllib.request.urlopen(location, timeout=timeout) as response:
             charset = response.headers.get_content_charset() or "utf-8"
             return response.read().decode(charset, "replace")
-    return (Path(base).parent / href).read_text(encoding="utf-8", errors="replace")
+    return Path(location).read_text(encoding="utf-8", errors="replace")
 
 
 def declarations(
