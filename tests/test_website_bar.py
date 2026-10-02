@@ -130,6 +130,36 @@ class MotionDurations(unittest.TestCase):
         self.assertIn("900ms is past the absolute ceiling", messages)
         self.assertTrue(all(h["location"].startswith("motion.css:") for h in hits))
 
+    def test_a_stylesheet_that_cannot_be_read_exits_two_and_names_it(self):
+        # It used to become a note under a PASS, so a page graded on part
+        # of its CSS read as a page that cleared the bar.
+        with tempfile.TemporaryDirectory() as tmp:
+            page = Path(tmp) / "linked.html"
+            page.write_text(
+                '<html><head><meta name="viewport" content="width=device-width">'
+                '<link rel="stylesheet" href="missing.css"></head>'
+                "<body><h1>Short heading</h1></body></html>", encoding="utf-8")
+            code, output = run(page)
+        self.assertEqual(code, 2, output)
+        self.assertEqual(len(output.strip().splitlines()), 1, output)
+        self.assertTrue(output.startswith("website-bar: stylesheet not read: missing.css"),
+                        output)
+
+    def test_a_remote_stylesheet_on_a_local_page_stays_a_note(self):
+        # A local page is graded offline by design; a CDN stylesheet it
+        # links is named in the report rather than fetched.
+        with tempfile.TemporaryDirectory() as tmp:
+            page = Path(tmp) / "cdn.html"
+            page.write_text(
+                '<html><head><meta name="viewport" content="width=device-width">'
+                '<link rel="stylesheet" href="https://example.com/site.css"></head>'
+                "<body><h1>Short heading</h1></body></html>", encoding="utf-8")
+            code, payload = run_json(page)
+        self.assertEqual(code, 0, payload)
+        self.assertEqual(payload["notes"], [
+            "stylesheet not read: https://example.com/site.css"
+            " (remote stylesheet on a local page)"])
+
     def test_transition_delay_is_not_read_as_a_duration(self):
         with tempfile.TemporaryDirectory() as tmp:
             page = Path(tmp) / "delay.html"

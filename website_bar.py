@@ -10,9 +10,10 @@ Four check families: headline economy, motion durations, slop patterns,
 craft basics. Each is individually toggleable in the bar config.
 
 Stdlib only. Exit 0 when the page clears the bar, 1 when it does not,
-and 2 when the run never happened: bad usage, a page that cannot be
-read or fetched, a bar file that is missing, not valid JSON, or shaped
-so the checks cannot use it, or a bug in website-bar itself.
+and 2 when the run never happened: bad usage, a page or a stylesheet
+it links that cannot be read or fetched, a bar file that is missing,
+not valid JSON, or shaped so the checks cannot use it, or a bug in
+website-bar itself.
 
 Usage:
     python3 website_bar.py <url-or-file> --bar config/example-bar.json [--json]
@@ -283,31 +284,43 @@ def read_target(target: str, timeout: float) -> tuple[str, str, str]:
     return path.read_text(encoding="utf-8", errors="replace"), str(path), str(path)
 
 
+class StylesheetError(Exception):
+    """A stylesheet the page links that could not be read."""
+
+
 def collect_css(page: Page, base: str, timeout: float) -> tuple[list[Source], list[str]]:
     """Gather inline styles, <style> blocks, and linked stylesheets.
 
-    Unreadable stylesheets are reported rather than swallowed: a bar that
-    silently skips a file would grade the page on a fraction of its CSS.
+    A stylesheet that cannot be read stops the run: grading the page on a
+    fraction of its CSS and printing PASS would be a verdict on a page
+    nobody fully read. A remote stylesheet on a local page is the one
+    exception, because a local page is graded offline by design; it is
+    named in a note instead.
     """
     sources = [Source(css, f"{page.label} {where}", line) for css, where, line in page.inline_styles]
     sources += [Source(css, page.label, line) for css, line in page.style_blocks]
     notes = []
     for href in page.stylesheet_hrefs:
+        if is_url(href) and not is_url(base):
+            notes.append(f"stylesheet not read: {href} (remote stylesheet on a local page)")
+            continue
         try:
             sources.append(Source(read_stylesheet(href, base, timeout), href, 1))
         except (OSError, ValueError, urllib.error.URLError) as err:
-            notes.append(f"stylesheet not read: {href} ({err})")
+            raise StylesheetError(f"stylesheet not read: {href} ({err})") from err
     return sources, notes
 
 
+def is_url(text: str) -> bool:
+    return re.match(r"^https?://", text) is not None
+
+
 def read_stylesheet(href: str, base: str, timeout: float) -> str:
-    if re.match(r"^https?://", base):
+    if is_url(base):
         url = urllib.parse.urljoin(base, href)
         with urllib.request.urlopen(url, timeout=timeout) as response:
             charset = response.headers.get_content_charset() or "utf-8"
             return response.read().decode(charset, "replace")
-    if re.match(r"^https?://", href):
-        raise ValueError("remote stylesheet on a local page")
     return (Path(base).parent / href).read_text(encoding="utf-8", errors="replace")
 
 
@@ -637,7 +650,11 @@ def grade_cli(argv: list[str] | None) -> int:
     page = Page(label)
     page.feed(html)
     page.close()
-    sources, notes = collect_css(page, base, args.timeout)
+    try:
+        sources, notes = collect_css(page, base, args.timeout)
+    except StylesheetError as err:
+        print(f"website-bar: {err}", file=sys.stderr)
+        return 2
     try:
         results = grade(page, sources, bar)
     except BarSettingsError as err:

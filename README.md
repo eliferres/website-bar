@@ -4,9 +4,9 @@ Design taste is usually argued in adjectives. website-bar grades it in numbers. 
 
 Point it at a URL or a local HTML file. Exit 0 clears the bar, exit 1
 does not, and exit 2 means the run never happened: bad usage, a page
-that cannot be read or fetched, a bar file that is missing, not valid
-JSON, or shaped so the checks cannot use it, or a bug in website-bar
-itself. In CI, treat 2 as a broken job rather than a failing page.
+or a stylesheet it links that cannot be read or fetched, a bar file
+that is missing, not valid JSON, or shaped so the checks cannot use it,
+or a bug in website-bar itself. In CI, treat 2 as a broken job rather than a failing page.
 
 ![ci](https://github.com/eliferres/website-bar/actions/workflows/ci.yml/badge.svg)
 
@@ -227,6 +227,9 @@ to the tests.
 - Static analysis only. Nothing is rendered and no JavaScript runs, so
   computed styles, CSS-in-JS, and motion injected at runtime are
   invisible. A page can pass here and still animate badly in a browser.
+- A local page is graded offline, so a stylesheet it links by an
+  `http` or `https` URL, a CDN font sheet for one, is not fetched. The
+  report names each one in a note; grade the deployed URL to include it.
 - Font and color counts are approximate: they count declarations in the
   source, not what actually paints. Design tokens and unused rules both
   inflate them.
