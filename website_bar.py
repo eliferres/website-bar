@@ -11,9 +11,9 @@ craft basics. Each is individually toggleable in the bar config.
 
 Stdlib only. Exit 0 when the page clears the bar, 1 when it does not,
 and 2 when the run never happened: bad usage, a page or a stylesheet
-it links that cannot be read or fetched, a bar file that is missing,
-not valid JSON, or shaped so the checks cannot use it, or a bug in
-website-bar itself.
+it links or imports that cannot be read or fetched, a bar file that
+is missing, not valid JSON, or shaped so the checks cannot use it, or
+a bug in website-bar itself.
 
 Usage:
     python3 website_bar.py <url-or-file> --bar config/example-bar.json [--json]

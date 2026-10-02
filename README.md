@@ -4,10 +4,10 @@ Design taste is usually argued in adjectives. website-bar grades it in numbers. 
 
 Point it at a URL or a local HTML file. Exit 0 clears the bar, exit 1
 does not, and exit 2 means the run never happened: bad usage, a page
-or a stylesheet it links that cannot be read or fetched, a bar file
-that is missing, not valid JSON, or shaped so the checks cannot use it,
-or a bug in website-bar itself. In CI, treat 2 as a broken job rather
-than a failing page.
+or a stylesheet it links or imports that cannot be read or fetched, a
+bar file that is missing, not valid JSON, or shaped so the checks
+cannot use it, or a bug in website-bar itself. In CI, treat 2 as a
+broken job rather than a failing page.
 
 ![ci](https://github.com/eliferres/website-bar/actions/workflows/ci.yml/badge.svg)
 ![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
