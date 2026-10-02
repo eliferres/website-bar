@@ -574,6 +574,17 @@ class BarSettingTypes(unittest.TestCase):
                     'setting "max_words" in check family "headline_economy" has'
                     ' the key "%s", which is not a heading tag h1 to h6' % key, output)
 
+    def test_a_blank_banned_opener_is_refused(self):
+        # "" opens every heading, so it flagged them all; "   " opens none,
+        # yet counted as a rule switched on.
+        for opener in ("", "   "):
+            with self.subTest(opener=opener):
+                output = self.refuse(
+                    "headline_economy", {"enabled": True, "banned_openers": [opener]})
+                self.assertIn(
+                    'setting "banned_openers" in check family "headline_economy"'
+                    " holds a blank entry", output)
+
     def test_a_heading_tag_given_twice_in_different_case_is_refused(self):
         # Lowercased into one dict, the later key won: {"h1": 3, "H1": 9}
         # let a six-word h1 pass a ceiling of three.

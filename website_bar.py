@@ -664,6 +664,12 @@ def load_bar(path: Path) -> dict:
                 raise ValueError(
                     f'setting "{setting}" in check family "{family}" must be'
                     f' {expected}: {path}')
+            # A blank opener starts every heading, or with spaces in it none,
+            # while still counting as a rule switched on.
+            if setting == "banned_openers" and any(not item.strip() for item in value):
+                raise ValueError(
+                    f'setting "{setting}" in check family "{family}" holds a blank'
+                    f' entry: {path}')
             # max_words is the only mapping a bar holds, and its keys are
             # heading tags. Any other key is a ceiling no heading is ever
             # measured against, so the page would pass without being read.
