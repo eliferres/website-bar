@@ -266,6 +266,22 @@ class MotionDurations(unittest.TestCase):
             "stylesheet not read: HTTPS://example.com/a.css"
             " (remote stylesheet on a local page)"])
 
+    def test_a_local_stylesheet_with_a_query_or_fragment_is_read(self):
+        # Cache-busting suffixes were kept in the file name, so a sheet that
+        # exists stopped the run at exit 2 as unreadable.
+        with tempfile.TemporaryDirectory() as tmp:
+            (Path(tmp) / "slow.css").write_text(
+                ".a { transition: color 1500ms; }\n", encoding="utf-8")
+            page = self.import_page(
+                tmp, '<link rel="stylesheet" href="slow.css?v=3">'
+                     "<style>@import 'slow.css#top';</style>")
+            code, payload = run_json(page)
+        self.assertEqual(code, 1, payload)
+        hits = [f for f in failures(payload, "motion_durations")
+                if f["rule"] == "duration-bounds"]
+        self.assertEqual([f["message"] for f in hits],
+                         ["1500ms is past the absolute ceiling of 700ms"])
+
     def test_time_units_in_capitals_are_read(self):
         # CSS units are case-insensitive; 1500MS used to match nothing.
         with tempfile.TemporaryDirectory() as tmp:

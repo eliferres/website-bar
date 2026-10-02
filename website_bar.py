@@ -369,7 +369,10 @@ def locate(href: str, importer: str) -> str:
     """Where a stylesheet lives: a URL, or a resolved local path."""
     if is_url(importer):
         return urllib.parse.urljoin(importer, href)
-    return str((Path(importer).parent / href).resolve())
+    # A query or fragment (slow.css?v=3) means something to a server, not
+    # to a file system, so it is dropped before the path is opened.
+    path = re.split(r"[?#]", href, maxsplit=1)[0]
+    return str((Path(importer).parent / path).resolve())
 
 
 def label_for(href: str, importer: str, page_base: str) -> str:
