@@ -698,7 +698,7 @@ class VersionFlag(unittest.TestCase):
             [sys.executable, str(REPO / "website_bar.py"), "--version"],
             cwd=REPO, capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout, "website-bar 1.1.0\n")
+        self.assertEqual(result.stdout, "website-bar 1.2.0\n")
         self.assertEqual(result.stderr, "")
 
 

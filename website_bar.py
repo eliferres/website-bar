@@ -34,7 +34,7 @@ from collections.abc import Iterator
 from html.parser import HTMLParser
 from pathlib import Path
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 FAMILY_ORDER = ("headline_economy", "motion_durations", "slop_patterns", "craft_basics")
 FAMILY_TITLES = {
