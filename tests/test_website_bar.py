@@ -289,6 +289,33 @@ class ConfigAndOutput(unittest.TestCase):
                 self.assertIn("no check family in the bar is enabled", output)
                 self.assertEqual(len(output.strip().splitlines()), 1, output)
 
+    def test_an_enabled_family_with_no_rule_switched_on_exits_two(self):
+        # Switched on with nothing to check, the family graded nothing and
+        # its PASS read as a page that cleared the bar.
+        for family, settings in (
+            ("craft_basics", {"enabled": True}),
+            ("craft_basics", {"enabled": True, "require_alt_text": False}),
+            ("headline_economy", {"enabled": True, "max_words": {},
+                                  "banned_openers": [], "proper_nouns": ["Acme"]}),
+        ):
+            with self.subTest(family=family, settings=settings):
+                code, output = self.refuse(
+                    json.dumps({"checks": {family: settings}}))
+                self.assertEqual(code, 2, output)
+                self.assertIn(
+                    'check family "%s" is enabled but switches on no rule' % family,
+                    output)
+                self.assertEqual(len(output.strip().splitlines()), 1, output)
+
+    def test_a_family_whose_rules_run_on_defaults_needs_only_enabled(self):
+        # Motion durations and slop patterns grade against defaults, so
+        # enabling them alone still checks the page.
+        for family in ("motion_durations", "slop_patterns"):
+            with self.subTest(family=family):
+                code, output = self.refuse(
+                    json.dumps({"checks": {family: {"enabled": True}}}))
+                self.assertEqual(code, 0, output)
+
     def test_disabling_some_families_still_grades_the_rest(self):
         with tempfile.TemporaryDirectory() as tmp:
             bar = bar_with(

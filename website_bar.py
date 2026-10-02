@@ -134,6 +134,30 @@ SETTING_TYPES = {
 }
 
 
+# The settings that switch a rule on, for the families whose every rule
+# is opt-in. Motion durations and slop patterns are absent because their
+# rules run on defaults (a duration ceiling, an emoji-bullet allowance of
+# zero), so enabling them alone still grades the page.
+RULE_SETTINGS = {
+    "headline_economy": ("max_words", "banned_openers", "require_sentence_case"),
+    "craft_basics": (
+        "max_font_families", "max_colors", "require_alt_text", "require_viewport_meta"),
+}
+
+
+def switches_on(value: object) -> bool:
+    """True when a rule setting asks its check to run.
+
+    A false flag or an empty list or mapping asks for nothing; any
+    number, zero included, is a ceiling the check enforces.
+    """
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (list, dict)):
+        return bool(value)
+    return value is not None
+
+
 class BarSettingsError(ValueError):
     """A bar setting of the right shape that a check cannot use."""
 
@@ -559,6 +583,14 @@ def load_bar(path: Path) -> dict:
                             f'setting "{setting}" in check family "{family}" has'
                             f' the key "{key}", which is not a heading tag h1 to h6:'
                             f' {path}')
+    for family, rules in RULE_SETTINGS.items():
+        config = checks.get(family, {})
+        if config.get("enabled") and not any(switches_on(config.get(r)) for r in rules):
+            # An enabled family with nothing to check grades nothing, and
+            # its PASS would read as a page that cleared the bar.
+            raise ValueError(
+                f'check family "{family}" is enabled but switches on no rule'
+                f' ({", ".join(rules)}): {path}')
     if not any(checks.get(family, {}).get("enabled") for family in FAMILY_ORDER):
         # Exit 2 means the run never happened, and a run in which no
         # family graded anything is exactly that, whatever it would
