@@ -387,7 +387,8 @@ def label_for(href: str, importer: str, page_base: str) -> str:
 
 
 def is_url(text: str) -> bool:
-    return re.match(r"^https?://", text) is not None
+    """True for an http(s) URL, any case, or a protocol-relative //host one."""
+    return re.match(r"^(https?:)?//", text, re.I) is not None
 
 
 def read_stylesheet(location: str, timeout: float) -> str:

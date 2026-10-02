@@ -251,6 +251,21 @@ class MotionDurations(unittest.TestCase):
             ("900ms is past the absolute ceiling of 700ms", root + "/css/abs.css:1"),
         ])
 
+    def test_protocol_relative_and_capitalised_urls_on_a_local_page_are_notes(self):
+        # Matched case-sensitively and only with a scheme, these were read
+        # as local paths and stopped the run at exit 2.
+        with tempfile.TemporaryDirectory() as tmp:
+            page = self.import_page(
+                tmp, '<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Inter">'
+                     '<link rel="stylesheet" href="HTTPS://example.com/a.css">')
+            code, payload = run_json(page)
+        self.assertEqual(code, 0, payload)
+        self.assertEqual(payload["notes"], [
+            "stylesheet not read: //fonts.googleapis.com/css?family=Inter"
+            " (remote stylesheet on a local page)",
+            "stylesheet not read: HTTPS://example.com/a.css"
+            " (remote stylesheet on a local page)"])
+
     def test_time_units_in_capitals_are_read(self):
         # CSS units are case-insensitive; 1500MS used to match nothing.
         with tempfile.TemporaryDirectory() as tmp:
