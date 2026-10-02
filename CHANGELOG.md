@@ -14,6 +14,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - CI runs the tests on Python 3.9, 3.11 and 3.13; 3.13 replaces 3.12, so the newest supported release is covered.
 - Reorganized the README: the walkthrough, the bar format and the check families sit under plainer headings, the file table is one sentence under Quick start, and the license line closes the file.
 - The demo transcript test and the README's slop patterns section now describe the transcript and the emoji-bullet counter in plain terms.
+- The README opens with badges for the license, the supported Python versions and the dependency count beside the CI badge.
 
 ### Fixed
 - The demo transcript and the terminal picture showed an abridged report: the header lines, the offending strings and their line numbers were all missing. Both now come from a real run, and a new test replays every recorded command and fails if a single character drifts.
