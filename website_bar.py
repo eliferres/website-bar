@@ -45,7 +45,8 @@ FAMILY_TITLES = {
 
 CSS_COMMENT = re.compile(r"/\*.*?\*/", re.S)
 DECLARATION = re.compile(r"([a-zA-Z-]+)\s*:\s*([^;{}]+)")
-TIME_VALUE = re.compile(r"(-?\d*\.?\d+)(ms|s)\b")
+# CSS units are case-insensitive: 1500MS is 1500ms.
+TIME_VALUE = re.compile(r"(-?\d*\.?\d+)(ms|s)\b", re.I)
 HEX_COLOR = re.compile(r"#[0-9a-fA-F]{3,8}\b")
 FUNC_COLOR = re.compile(r"\b(?:rgba?|hsla?)\([^)]*\)")
 # The blocks people actually reach for as bullet glyphs: pictographs,
@@ -348,7 +349,7 @@ def durations_ms(prop: str, value: str) -> list[float]:
             found.extend(times)
         elif times:
             found.append(times[0])
-    return [float(number) * (1.0 if unit == "ms" else 1000.0) for number, unit in found]
+    return [float(number) * (1.0 if unit.lower() == "ms" else 1000.0) for number, unit in found]
 
 
 def check_headline_economy(page: Page, config: dict) -> list[Finding]:

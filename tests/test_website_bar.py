@@ -160,6 +160,21 @@ class MotionDurations(unittest.TestCase):
             "stylesheet not read: https://example.com/site.css"
             " (remote stylesheet on a local page)"])
 
+    def test_time_units_in_capitals_are_read(self):
+        # CSS units are case-insensitive; 1500MS used to match nothing.
+        with tempfile.TemporaryDirectory() as tmp:
+            page = Path(tmp) / "caps.html"
+            page.write_text(
+                "<html><head><style>.a { transition: color 1500MS; }\n"
+                ".b { animation-duration: 2S; }</style></head>"
+                "<body></body></html>", encoding="utf-8")
+            _, payload = run_json(page)
+        messages = [f["message"] for f in failures(payload, "motion_durations")
+                    if f["rule"] == "duration-bounds"]
+        self.assertEqual(messages, [
+            "1500ms is past the absolute ceiling of 700ms",
+            "2000ms is past the absolute ceiling of 700ms"])
+
     def test_transition_delay_is_not_read_as_a_duration(self):
         with tempfile.TemporaryDirectory() as tmp:
             page = Path(tmp) / "delay.html"

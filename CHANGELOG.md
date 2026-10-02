@@ -30,6 +30,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - A `max_words` key that is not a heading tag is now refused when the bar loads, with one line naming the key, and exit 2. The keys were never checked, so `{"title": 3, "h1 ": 3}` set ceilings no heading was measured against and the failing demo page printed PASS at exit 0. `max_words` is the only setting that holds a mapping.
 - A headline economy or craft basics family that is enabled with no rule switched on, `{"craft_basics": {"enabled": true}}` for one, graded nothing and printed a PASS at exit 0. It is now refused when the bar loads, with one line naming the family and the settings that would switch a rule on, and exit 2. Motion durations and slop patterns grade on defaults and still need only `enabled`.
 - A stylesheet the page links that cannot be read, a missing file or a failed fetch, now stops the run with one line naming the stylesheet, and exit 2. It used to become a note under the report, so a page graded on part of its CSS printed PASS at exit 0. A remote stylesheet linked from a local page is still not fetched and is still named in a note; the README lists this under Limitations.
+- Durations written with capital units, `1500MS` or `2S`, are now graded. CSS units are case-insensitive, but only lowercase ones were read, so a sluggish transition in capitals passed unseen.
 
 ## [1.1.0](https://github.com/eliferres/website-bar/releases/tag/v1.1.0) - 2026-09-03
 
