@@ -179,8 +179,8 @@ the family and the setting, and exit 2. A setting name no family reads,
 a check off. A bar with no family enabled at all is refused too: a run
 that graded nothing is not a passing page. The types are the ones shown above: `enabled` and the
 `require_` flags hold true or false, `banned_openers`, `proper_nouns` and
-`phrases` hold lists of strings, `max_words` maps a heading tag to a
-non-negative number, and every remaining number is non-negative and small
+`phrases` hold lists of strings, `max_words` maps a heading tag, `h1`
+to `h6`, to a non-negative number and refuses any other key, and every remaining number is non-negative and small
 enough to print in a verdict.
 
 ## The four check families

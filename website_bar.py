@@ -544,10 +544,21 @@ def load_bar(path: Path) -> dict:
                 raise ValueError(
                     f'unknown setting "{setting}" in check family "{family}": {path}')
             expected, holds = declared
-            if not holds(config[setting]):
+            value = config[setting]
+            if not holds(value):
                 raise ValueError(
                     f'setting "{setting}" in check family "{family}" must be'
                     f' {expected}: {path}')
+            # max_words is the only mapping a bar holds, and its keys are
+            # heading tags. Any other key is a ceiling no heading is ever
+            # measured against, so the page would pass without being read.
+            if declared is NUMBER_MAP:
+                for key in sorted(value):
+                    if key.lower() not in HEADINGS:
+                        raise ValueError(
+                            f'setting "{setting}" in check family "{family}" has'
+                            f' the key "{key}", which is not a heading tag h1 to h6:'
+                            f' {path}')
     if not any(checks.get(family, {}).get("enabled") for family in FAMILY_ORDER):
         # Exit 2 means the run never happened, and a run in which no
         # family graded anything is exactly that, whatever it would

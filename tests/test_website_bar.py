@@ -368,6 +368,28 @@ class BarSettingTypes(unittest.TestCase):
             'setting "max_words" in check family "headline_economy" must be'
             " an object mapping a name to a non-negative number", output)
 
+    def test_a_word_ceiling_for_something_that_is_not_a_heading_is_refused(self):
+        # Keys were never read against anything, so "title" and "h1 " set
+        # ceilings no heading would ever be measured by, and the failing
+        # demo page passed.
+        for key in ("title", "h1 ", "h7"):
+            with self.subTest(key=key):
+                output = self.refuse(
+                    "headline_economy", {"enabled": True, "max_words": {key: 3}})
+                self.assertIn(
+                    'setting "max_words" in check family "headline_economy" has'
+                    ' the key "%s", which is not a heading tag h1 to h6' % key, output)
+
+    def test_every_heading_tag_is_accepted_as_a_word_ceiling_key(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            bar = bar_with(tmp, headline_economy={
+                "enabled": True,
+                "max_words": {tag: 3 for tag in ("h1", "h2", "h3", "H4", "h5", "h6")}})
+            code, payload = run_json(REPO / "demo" / "failing-page.html", bar)
+        self.assertEqual(code, 1)
+        self.assertTrue(any(f["rule"] == "h1-word-ceiling"
+                            for f in failures(payload, "headline_economy")))
+
     def test_a_number_no_check_could_print_is_refused(self):
         # 10**400 has no float, so formatting it in a verdict used to
         # raise OverflowError from inside the check.
