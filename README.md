@@ -1,13 +1,6 @@
 # website-bar
 
-Design taste is usually argued in adjectives. website-bar grades it in numbers. Write a best-in-class standard's measurable habits into one JSON bar and every page you ship gets the same report: rule by rule, pass or fail, with the exact offending string and where it lives. No browser, no dependencies, exit codes for CI.
-
-Point it at a URL or a local HTML file. Exit 0 clears the bar, exit 1
-does not, and exit 2 means the run never happened: bad usage, a page
-or a stylesheet it links or imports that cannot be read or fetched, a
-bar file that is missing, not valid JSON, or shaped so the checks
-cannot use it, or a bug in website-bar itself. In CI, treat 2 as a
-broken job rather than a failing page.
+website-bar grades a page against one JSON bar of measurable design habits, rule by rule, pass or fail. No browser, no dependencies, exit codes for CI.
 
 ![ci](https://github.com/eliferres/website-bar/actions/workflows/ci.yml/badge.svg)
 ![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
@@ -15,6 +8,17 @@ broken job rather than a failing page.
 ![dependencies: none](https://img.shields.io/badge/dependencies-none-brightgreen.svg)
 
 <img src="demo/terminal.svg" width="660" alt="Terminal session showing website-bar grading the failing demo page: five failures across headline economy, motion durations and slop patterns, each with the offending string and its line, then the FAIL verdict.">
+
+## What it does
+
+Design taste is usually argued in adjectives. website-bar grades it in numbers. Write a best-in-class standard's measurable habits into one JSON bar and every page you ship gets the same report: rule by rule, pass or fail, with the exact offending string and where it lives.
+
+Point it at a URL or a local HTML file. Exit 0 clears the bar, exit 1
+does not, and exit 2 means the run never happened: bad usage, a page
+or a stylesheet it links or imports that cannot be read or fetched, a
+bar file that is missing, not valid JSON, or shaped so the checks
+cannot use it, or a bug in website-bar itself. In CI, treat 2 as a
+broken job rather than a failing page.
 
 ## Quick start
 
