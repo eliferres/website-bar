@@ -2,12 +2,14 @@
 
 website-bar grades a page against one JSON bar of measurable design habits, rule by rule, pass or fail. No browser, no dependencies, exit codes for CI.
 
-![ci](https://github.com/eliferres/website-bar/actions/workflows/ci.yml/badge.svg)
+[![ci](https://github.com/eliferres/website-bar/actions/workflows/ci.yml/badge.svg)](https://github.com/eliferres/website-bar/actions/workflows/ci.yml)
 ![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
 ![python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)
 ![dependencies: none](https://img.shields.io/badge/dependencies-none-brightgreen.svg)
 
 <img src="demo/terminal.svg" width="660" alt="Terminal session showing website-bar grading the failing demo page: five failures across headline economy, motion durations and slop patterns, each with the offending string and its line, then the FAIL verdict.">
+
+The [fde-agent-skills](https://github.com/eliferres/fde-agent-skills) library documents the working methods behind this tool and its sibling tools as agent skills.
 
 ## What it does
 
